@@ -12,18 +12,24 @@
     .stock-row { transition: background 0.15s; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
     .stock-row:hover { background: #f5f7fa; }
     .stock-row.active { background: #e8f0fe; border-left: 3px solid #1a73e8; }
-    .btn { transition: all 0.2s; border-radius: 6px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 10px; padding: 5px 10px; white-space: nowrap; }
+    .btn { transition: all 0.2s; border-radius: 5px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 10px; padding: 4px 8px; white-space: nowrap; }
     .btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
     .btn.toggle { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
     .green { color: #0d8043; } .red { color: #d93025; }
     ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: #f0f0f0; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+    .pane-container { display: flex; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; }
+    .pane { position: relative; border-bottom: 1px solid #e0e0e0; background: #fff; flex-shrink: 0; }
+    .pane-header { display: flex; justify-content: space-between; align-items: center; padding: 2px 8px; background: #f8f9fa; border-bottom: 1px solid #eee; font-size: 10px; color: #666; cursor: pointer; }
+    .pane-header .title { font-weight: 600; }
+    .pane-header .value { font-family: monospace; color: #333; }
+    .ind-setting-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .ind-setting-row input[type=number] { width: 38px; border: 1px solid #ddd; border-radius: 3px; padding: 2px 3px; font-size: 10px; text-align: center; }
+    .ind-setting-row input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; }
     #tooltip {
       position: absolute; z-index: 1000; pointer-events: none; display: none;
       background: #fff; border: 1px solid #ddd; border-radius: 6px;
       padding: 8px 12px; font-size: 11px; font-family: monospace; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
-    .ind-setting { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 4px; padding: 6px 8px; margin: 2px; display: inline-flex; align-items: center; gap: 4px; }
-    .ind-setting input[type=number] { width: 40px; border: 1px solid #ddd; border-radius: 3px; padding: 2px 4px; font-size: 10px; text-align: center; }
   </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -33,63 +39,61 @@
     <div class="flex items-center gap-2">
       <button onclick="toggleWatchlist()" class="text-gray-600 text-base px-1">☰</button>
       <span class="text-blue-600 font-bold text-sm">CHART<span class="text-gray-800">PRO</span></span>
-      <span id="sourceLabel" class="text-[10px] text-green-600 font-medium hidden sm:inline">● NSE Live</span>
     </div>
     <div class="flex gap-1">
       <button onclick="toggleMultiview()" id="mvBtn" class="btn">📊 Multi</button>
-      <button onclick="toggleIndicatorPanel()" id="indBtn" class="btn">📈 Indicators</button>
+      <button onclick="toggleIndicators()" id="indBtn" class="btn">📈 Indicators</button>
     </div>
   </div>
 
-  <!-- INDICATOR SETTINGS PANEL -->
-  <div id="indicatorPanel" class="hidden bg-white border-b border-gray-200 px-3 py-2">
-    <div class="flex flex-wrap gap-2 text-[10px] items-center">
-      <span class="font-medium text-gray-600 mr-1">Indicators:</span>
+  <!-- INDICATOR PANEL -->
+  <div id="indicatorPanel" class="hidden bg-white border-b border-gray-200 px-2 py-1.5 flex-shrink-0">
+    <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] items-center">
       
-      <div class="ind-setting">
+      <div class="ind-setting-row">
+        <input type="checkbox" onchange="toggleInd('volume')" id="chkVol" checked>
+        <span>Vol</span>
+      </div>
+      
+      <div class="ind-setting-row">
         <input type="checkbox" onchange="toggleInd('ma')" id="chkMA">
         <span>MA</span>
-        <input type="number" value="20" min="2" max="500" id="maPeriod" onchange="updateIndSettings()" class="ml-1">
-        <span class="text-gray-400">period</span>
+        <input type="number" value="20" min="2" max="500" id="maPeriod" onchange="refreshIndicators()">
       </div>
       
-      <div class="ind-setting">
+      <div class="ind-setting-row">
         <input type="checkbox" onchange="toggleInd('bb')" id="chkBB">
-        <span>Bollinger</span>
-        <input type="number" value="20" min="2" max="100" id="bbPeriod" onchange="updateIndSettings()">
-        <input type="number" value="2" min="0.5" max="5" step="0.5" id="bbStd" onchange="updateIndSettings()">
+        <span>BB</span>
+        <input type="number" value="20" min="2" max="100" id="bbPeriod" onchange="refreshIndicators()">
+        <input type="number" value="2" min="0.5" max="5" step="0.5" id="bbStd" onchange="refreshIndicators()">
       </div>
       
-      <div class="ind-setting">
+      <div class="ind-setting-row">
         <input type="checkbox" onchange="toggleInd('rsi')" id="chkRSI">
         <span>RSI</span>
-        <input type="number" value="14" min="2" max="100" id="rsiPeriod" onchange="updateIndSettings()">
+        <input type="number" value="14" min="2" max="100" id="rsiPeriod" onchange="refreshIndicators()">
       </div>
       
-      <div class="ind-setting">
-        <input type="checkbox" onchange="toggleInd('adx')" id="chkADX">
-        <span>ADX</span>
-        <input type="number" value="14" min="2" max="100" id="adxPeriod" onchange="updateIndSettings()">
-      </div>
-      
-      <div class="ind-setting">
-        <input type="checkbox" onchange="toggleInd('atr')" id="chkATR">
-        <span>ATR</span>
-        <input type="number" value="14" min="2" max="100" id="atrPeriod" onchange="updateIndSettings()">
-      </div>
-      
-      <div class="ind-setting">
+      <div class="ind-setting-row">
         <input type="checkbox" onchange="toggleInd('macd')" id="chkMACD">
         <span>MACD</span>
-        <input type="number" value="12" min="2" max="100" id="macdFast" onchange="updateIndSettings()">
-        <input type="number" value="26" min="2" max="100" id="macdSlow" onchange="updateIndSettings()">
-        <input type="number" value="9" min="2" max="50" id="macdSignal" onchange="updateIndSettings()">
+        <input type="number" value="12" min="2" max="100" id="macdFast" onchange="refreshIndicators()">
+        <input type="number" value="26" min="2" max="100" id="macdSlow" onchange="refreshIndicators()">
+        <input type="number" value="9" min="2" max="50" id="macdSignal" onchange="refreshIndicators()">
       </div>
       
-      <div class="ind-setting">
-        <input type="checkbox" onchange="toggleInd('volume')" id="chkVol">
-        <span>Volume</span>
+      <div class="ind-setting-row">
+        <input type="checkbox" onchange="toggleInd('adx')" id="chkADX">
+        <span>ADX</span>
+        <input type="number" value="14" min="2" max="100" id="adxPeriod" onchange="refreshIndicators()">
       </div>
+      
+      <div class="ind-setting-row">
+        <input type="checkbox" onchange="toggleInd('atr')" id="chkATR">
+        <span>ATR</span>
+        <input type="number" value="14" min="2" max="100" id="atrPeriod" onchange="refreshIndicators()">
+      </div>
+      
     </div>
   </div>
 
@@ -97,8 +101,8 @@
   <div class="flex flex-1 overflow-hidden" id="mainContainer">
     
     <!-- WATCHLIST -->
-    <div id="watchlistPanel" class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0" style="width:260px; transition: width 0.3s;">
-      <div class="p-2 border-b border-gray-200">
+    <div id="watchlistPanel" class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0" style="width:240px; transition: width 0.3s;">
+      <div class="p-1.5 border-b border-gray-200">
         <input type="text" id="search" placeholder="Search..." class="w-full bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500">
       </div>
       <div class="px-2 py-1 text-[9px] text-gray-500 grid grid-cols-12 border-b border-gray-100 font-medium">
@@ -115,7 +119,7 @@
     <div class="flex-1 flex flex-col min-h-0 bg-[#f8f9fa]" id="chartArea">
       
       <!-- STOCK HEADER -->
-      <div class="px-3 py-1.5 bg-white border-b border-gray-200">
+      <div class="px-3 py-1.5 bg-white border-b border-gray-200 flex-shrink-0">
         <div class="flex justify-between items-start flex-wrap gap-2">
           <div>
             <div class="flex items-center gap-2">
@@ -138,19 +142,46 @@
       </div>
 
       <!-- TIMEFRAME -->
-      <div class="flex gap-1 px-2 py-1 bg-white border-b border-gray-100 items-center flex-wrap">
+      <div class="flex gap-1 px-2 py-1 bg-white border-b border-gray-100 items-center flex-shrink-0">
         <button onclick="setTF('daily')" id="tfdaily" class="btn active">Daily</button>
         <button onclick="setTF('weekly')" id="tfweekly" class="btn">Weekly</button>
         <button onclick="setTF('monthly')" id="tfmonthly" class="btn">Monthly</button>
         <span id="dataRange" class="text-[9px] text-gray-400 ml-auto hidden sm:inline">—</span>
       </div>
 
-      <!-- CHARTS -->
-      <div id="singleChart" class="flex-1 relative" style="min-height:200px;"><div id="tooltip"></div></div>
-      <div id="multiCharts" class="hidden flex-1 flex flex-col" style="min-height:200px;">
-        <div id="chartDaily" class="flex-1 relative border-b border-gray-200"></div>
-        <div id="chartWeekly" class="flex-1 relative border-b border-gray-200"></div>
-        <div id="chartMonthly" class="flex-1 relative"></div>
+      <!-- SINGLE CHART VIEW -->
+      <div id="singleView" class="pane-container">
+        <div id="mainPane" class="pane" style="height: 55%; min-height: 200px;">
+          <div id="mainChart" style="width:100%;height:100%;"></div>
+          <div id="tooltip"></div>
+        </div>
+        <div id="volumePane" class="pane" style="height: 12%; min-height: 50px;">
+          <div class="pane-header"><span class="title">Volume</span></div>
+          <div id="volumeChart" style="width:100%;height:calc(100% - 20px);"></div>
+        </div>
+        <div id="rsiPane" class="pane hidden" style="height: 15%; min-height: 70px;">
+          <div class="pane-header"><span class="title">RSI</span><span class="value" id="rsiValue">—</span></div>
+          <div id="rsiChart" style="width:100%;height:calc(100% - 20px);"></div>
+        </div>
+        <div id="macdPane" class="pane hidden" style="height: 15%; min-height: 70px;">
+          <div class="pane-header"><span class="title">MACD</span><span class="value" id="macdValue">—</span></div>
+          <div id="macdChart" style="width:100%;height:calc(100% - 20px);"></div>
+        </div>
+        <div id="adxPane" class="pane hidden" style="height: 12%; min-height: 60px;">
+          <div class="pane-header"><span class="title">ADX</span><span class="value" id="adxValue">—</span></div>
+          <div id="adxChart" style="width:100%;height:calc(100% - 20px);"></div>
+        </div>
+        <div id="atrPane" class="pane hidden" style="height: 12%; min-height: 60px;">
+          <div class="pane-header"><span class="title">ATR</span><span class="value" id="atrValue">—</span></div>
+          <div id="atrChart" style="width:100%;height:calc(100% - 20px);"></div>
+        </div>
+      </div>
+
+      <!-- MULTI CHART VIEW -->
+      <div id="multiView" class="hidden pane-container">
+        <div class="pane" style="height:33%; min-height:120px;"><div id="chartD" style="width:100%;height:100%;"></div></div>
+        <div class="pane" style="height:33%; min-height:120px;"><div id="chartW" style="width:100%;height:100%;"></div></div>
+        <div class="pane" style="height:34%; min-height:120px;"><div id="chartM" style="width:100%;height:100%;"></div></div>
       </div>
     </div>
   </div>
@@ -158,45 +189,69 @@
 <script>
 const API = 'https://chartpro.onrender.com';
 let stocks = [], activeSymbol = 'RELIANCE', timeframe = 'daily', multiview = false, wlOpen = true;
-let chart = null, mainSeries = null, indicatorSeries = {};
+let mainChart = null, volChart = null, rsiChart = null, macdChart = null, adxChart = null, atrChart = null;
+let mainSeries = null, volSeries = null;
 let chartD = null, chartW = null, chartM = null, seriesD = null, seriesW = null, seriesM = null;
-let indicatorData = null;
-let activeIndicators = {ma:false, bb:false, rsi:false, adx:false, atr:false, macd:false, volume:false};
-let indSettings = {maPeriod:20, bbPeriod:20, bbStd:2, rsiPeriod:14, adxPeriod:14, atrPeriod:14, macdFast:12, macdSlow:26, macdSignal:9};
+let allCandles = [], indicatorData = null;
+let activeInd = {volume: true, ma: false, bb: false, rsi: false, macd: false, adx: false, atr: false};
+
+function getIndSettings() {
+  return {
+    ma: parseInt(document.getElementById('maPeriod')?.value) || 20,
+    bb_p: parseInt(document.getElementById('bbPeriod')?.value) || 20,
+    bb_s: parseFloat(document.getElementById('bbStd')?.value) || 2,
+    rsi: parseInt(document.getElementById('rsiPeriod')?.value) || 14,
+    macd_f: parseInt(document.getElementById('macdFast')?.value) || 12,
+    macd_s: parseInt(document.getElementById('macdSlow')?.value) || 26,
+    macd_sig: parseInt(document.getElementById('macdSignal')?.value) || 9,
+    adx: parseInt(document.getElementById('adxPeriod')?.value) || 14,
+    atr: parseInt(document.getElementById('atrPeriod')?.value) || 14,
+  };
+}
 
 async function loadStocks() {
   try { const r = await fetch(API+'/stocks'); if (r.ok) stocks = (await r.json()).map(s => ({...s, price:0, change:0, cp:0})); } catch(e) {}
 }
 
 async function fetchQuote(sym) { const r = await fetch(API+'/quote/'+sym); return r.ok ? await r.json() : null; }
-async function fetchHistory(sym, tf) { const r = await fetch(API+'/history/'+sym+'/'+tf); return r.ok ? await r.json() : null; }
+
+async function fetchHistory(sym, tf) {
+  const r = await fetch(API+'/history/'+sym+'/'+tf);
+  return r.ok ? await r.json() : null;
+}
+
 async function fetchIndicators(sym, tf) {
-  const params = new URLSearchParams(indSettings);
+  const s = getIndSettings();
+  const params = new URLSearchParams({
+    maPeriod: s.ma, bbPeriod: s.bb_p, bbStd: s.bb_s,
+    rsiPeriod: s.rsi, adxPeriod: s.adx, atrPeriod: s.atr,
+    macdFast: s.macd_f, macdSlow: s.macd_s, macdSignal: s.macd_sig
+  });
   const r = await fetch(API+'/indicators/'+sym+'/'+tf+'?'+params.toString());
   return r.ok ? await r.json() : null;
 }
 
-function createChart(containerId) {
+function createPaneChart(containerId, isMain=false) {
   const el = document.getElementById(containerId);
-  if (!el) return null;
+  if (!el || !el.clientWidth) return null;
   
   const c = LightweightCharts.createChart(el, {
-    layout: { background: { type:'solid', color:'#fff' }, textColor:'#333' },
+    layout: { background: { type:'solid', color:'#fff' }, textColor: isMain ? '#333' : '#666' },
     grid: { vertLines: { color:'#eee' }, horzLines: { color:'#eee' } },
-    crosshair: { mode: 1 },
-    rightPriceScale: { borderColor:'#ddd', autoScale: true, scaleMargins:{top:0.05,bottom:0.2} },
-    timeScale: { borderColor:'#ddd', timeVisible: true },
-    localization: { priceFormatter: p => '₹'+p.toFixed(2) },
+    crosshair: isMain ? { mode: 1 } : { mode: 0 },
+    rightPriceScale: { borderColor:'#ddd', autoScale: true, scaleMargins: isMain ? {top:0.08,bottom:0.15} : {top:0.05,bottom:0.05} },
+    timeScale: { borderColor:'#ddd', timeVisible: isMain, visible: isMain },
+    localization: { priceFormatter: p => isMain ? '₹'+p.toFixed(2) : p.toFixed(2) },
     width: el.clientWidth, height: el.clientHeight,
   });
   
-  const s = c.addCandlestickSeries({
-    upColor:'#0d8043', downColor:'#d93025',
-    borderUpColor:'#0d8043', borderDownColor:'#d93025',
-    wickUpColor:'#0d8043', wickDownColor:'#d93025',
-  });
-  
-  if (containerId === 'singleChart') {
+  if (isMain) {
+    const s = c.addCandlestickSeries({
+      upColor:'#0d8043', downColor:'#d93025',
+      borderUpColor:'#0d8043', borderDownColor:'#d93025',
+      wickUpColor:'#0d8043', wickDownColor:'#d93025',
+    });
+    
     c.subscribeCrosshairMove(param => {
       const t = document.getElementById('tooltip');
       if (!param.time || !param.point) { t.style.display='none'; return; }
@@ -207,100 +262,193 @@ function createChart(containerId) {
         document.getElementById('lo').textContent = '₹'+d.low.toFixed(2);
         document.getElementById('cl').textContent = '₹'+d.close.toFixed(2);
         t.style.display='block';
-        t.innerHTML = `<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div>`;
+        t.innerHTML = `<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div><div style="color:#888">O ₹${d.open.toFixed(2)} H ₹${d.high.toFixed(2)} L ₹${d.low.toFixed(2)}</div>`;
         const r = el.getBoundingClientRect();
-        t.style.left = Math.min(param.point.x+15, r.width-150)+'px';
-        t.style.top = Math.max(param.point.y-60, 5)+'px';
+        t.style.left = Math.min(param.point.x+15, r.width-155)+'px';
+        t.style.top = Math.max(param.point.y-70, 5)+'px';
       }
     });
+    
+    return { chart: c, series: s };
   }
   
-  return { chart:c, series:s };
+  return { chart: c };
 }
 
-function clearIndicators() {
-  Object.keys(indicatorSeries).forEach(k => {
-    try { chart.removeSeries(indicatorSeries[k]); } catch(e) {}
-  });
-  indicatorSeries = {};
-}
-
-function addLine(name, color, data) {
-  if (!chart || !indicatorData || !data) return;
-  const lineData = indicatorData.timestamps.map((t, i) => ({time: t, value: data[i]})).filter(d => d.value !== null && d.value !== undefined && !isNaN(d.value));
-  if (lineData.length < 2) return;
-  indicatorSeries[name] = chart.addLineSeries({color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false});
-  indicatorSeries[name].setData(lineData);
-}
-
-function applyIndicators() {
-  if (!chart || !indicatorData) return;
-  clearIndicators();
-  
-  if (activeIndicators.ma && indicatorData.ma) {
-    addLine('ma', '#1a73e8', indicatorData.ma);
-  }
-  if (activeIndicators.bb) {
-    if (indicatorData.bb_upper) addLine('bb_upper', '#999', indicatorData.bb_upper);
-    if (indicatorData.bb_lower) addLine('bb_lower', '#999', indicatorData.bb_lower);
-  }
-  if (activeIndicators.volume) {
-    const volData = indicatorData.timestamps.map((t, i) => ({
-      time: t,
-      value: indicatorData.volumes ? indicatorData.volumes[i] : 1000000,
-      color: 'rgba(0,0,0,0.15)'
-    }));
-    indicatorSeries.volume = chart.addHistogramSeries({
-      priceFormat: { type:'volume' },
-      priceScaleId: 'vol',
-    });
-    chart.priceScale('vol').applyOptions({scaleMargins:{top:0.85,bottom:0}, visible:false});
-    indicatorSeries.volume.setData(volData);
-  }
-  if (activeIndicators.rsi && indicatorData.rsi) addLine('rsi', '#7b1fa2', indicatorData.rsi);
-  if (activeIndicators.adx && indicatorData.adx) addLine('adx', '#00695c', indicatorData.adx);
-  if (activeIndicators.atr && indicatorData.atr) addLine('atr', '#bf360c', indicatorData.atr);
-  if (activeIndicators.macd) {
-    if (indicatorData.macd_line) addLine('macd_line', '#1a73e8', indicatorData.macd_line);
-    if (indicatorData.signal_line) addLine('signal_line', '#d93025', indicatorData.signal_line);
-  }
-}
-
-async function updateSingleChart() {
-  if (!chart) {
-    const c = createChart('singleChart');
-    if (!c) return;
-    chart = c.chart; mainSeries = c.series;
-  }
-  
+async function updateAllPanes() {
   const data = await fetchHistory(activeSymbol, timeframe);
   if (!data?.candles?.length) return;
+  allCandles = data.candles;
   
-  mainSeries.setData(data.candles);
-  chart.timeScale().fitContent();
+  // Main chart
+  if (!mainChart) {
+    const m = createPaneChart('mainChart', true);
+    if (m) { mainChart = m.chart; mainSeries = m.series; }
+  }
+  if (mainSeries) {
+    mainSeries.setData(allCandles);
+    mainChart.timeScale().fitContent();
+  }
   
-  const last = data.candles[data.candles.length-1];
-  document.getElementById('op').textContent = '₹'+data.candles[0].open.toFixed(2);
-  document.getElementById('hi').textContent = '₹'+Math.max(...data.candles.map(x=>x.high)).toFixed(2);
-  document.getElementById('lo').textContent = '₹'+Math.min(...data.candles.map(x=>x.low)).toFixed(2);
+  // Volume
+  if (!volChart) {
+    const v = createPaneChart('volumeChart');
+    if (v) volChart = v.chart;
+  }
+  if (volChart) {
+    try { volChart.removeSeries(volSeries); } catch(e) {}
+    volSeries = volChart.addHistogramSeries({ priceFormat: { type:'volume' } });
+    volSeries.setData(allCandles.map(c => ({
+      time: c.time,
+      value: c.volume,
+      color: c.close >= c.open ? 'rgba(13,128,67,0.4)' : 'rgba(217,48,37,0.4)'
+    })));
+    volChart.timeScale().fitContent();
+  }
+  
+  // Update OHLC
+  const last = allCandles[allCandles.length-1];
+  document.getElementById('op').textContent = '₹'+allCandles[0].open.toFixed(2);
+  document.getElementById('hi').textContent = '₹'+Math.max(...allCandles.map(x=>x.high)).toFixed(2);
+  document.getElementById('lo').textContent = '₹'+Math.min(...allCandles.map(x=>x.low)).toFixed(2);
   document.getElementById('cl').textContent = '₹'+last.close.toFixed(2);
   document.getElementById('dataRange').textContent = data.from+' → '+data.to;
   
+  // Fetch indicator data
   indicatorData = await fetchIndicators(activeSymbol, timeframe);
-  if (indicatorData) {
-    // Add volumes to indicatorData
-    indicatorData.volumes = data.candles.map(c => c.volume);
-    applyIndicators();
+  if (!indicatorData?.timestamps) return;
+  
+  const timestamps = indicatorData.timestamps;
+  
+  // RSI Pane
+  if (activeInd.rsi && indicatorData.rsi) {
+    document.getElementById('rsiPane').classList.remove('hidden');
+    if (!rsiChart) { const r = createPaneChart('rsiChart'); if (r) rsiChart = r.chart; }
+    if (rsiChart) {
+      try { rsiChart.removeSeries(rsiChart._series); } catch(e) {}
+      const rsiData = timestamps.map((t,i) => ({time:t, value:indicatorData.rsi[i]})).filter(d => d.value != null);
+      rsiChart._series = rsiChart.addLineSeries({ color:'#7b1fa2', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true });
+      rsiChart._series.setData(rsiData);
+      // Add 70/30 lines
+      addRefLine(rsiChart, 70, '#d93025');
+      addRefLine(rsiChart, 30, '#0d8043');
+      rsiChart.timeScale().fitContent();
+      document.getElementById('rsiValue').textContent = rsiData[rsiData.length-1]?.value?.toFixed(2) || '—';
+    }
+  } else {
+    document.getElementById('rsiPane').classList.add('hidden');
   }
   
-  resizeChart();
+  // MACD Pane
+  if (activeInd.macd && indicatorData.macd_line) {
+    document.getElementById('macdPane').classList.remove('hidden');
+    if (!macdChart) { const m = createPaneChart('macdChart'); if (m) macdChart = m.chart; }
+    if (macdChart) {
+      try { macdChart.removeSeries(macdChart._hist); macdChart.removeSeries(macdChart._sig); } catch(e) {}
+      const macdData = timestamps.map((t,i) => ({
+        time:t,
+        value: indicatorData.macd_histogram?.[i]
+      })).filter(d => d.value != null);
+      macdChart._hist = macdChart.addHistogramSeries({ priceFormat: { type:'price' } });
+      macdChart._hist.setData(macdData.map(d => ({
+        ...d,
+        color: d.value >= 0 ? 'rgba(13,128,67,0.5)' : 'rgba(217,48,37,0.5)'
+      })));
+      
+      const sigData = timestamps.map((t,i) => ({time:t, value:indicatorData.signal_line?.[i]})).filter(d => d.value != null);
+      macdChart._sig = macdChart.addLineSeries({ color:'#d93025', lineWidth: 1, priceLineVisible: false });
+      macdChart._sig.setData(sigData);
+      
+      addRefLine(macdChart, 0, '#999');
+      macdChart.timeScale().fitContent();
+      const lastMacd = indicatorData.macd_line?.filter(x=>x!=null).pop();
+      document.getElementById('macdValue').textContent = lastMacd?.toFixed(2) || '—';
+    }
+  } else {
+    document.getElementById('macdPane').classList.add('hidden');
+  }
+  
+  // ADX Pane
+  if (activeInd.adx && indicatorData.adx) {
+    document.getElementById('adxPane').classList.remove('hidden');
+    if (!adxChart) { const a = createPaneChart('adxChart'); if (a) adxChart = a.chart; }
+    if (adxChart) {
+      try { adxChart.removeSeries(adxChart._series); } catch(e) {}
+      const adxData = timestamps.map((t,i) => ({time:t, value:indicatorData.adx[i]})).filter(d => d.value != null);
+      adxChart._series = adxChart.addLineSeries({ color:'#00695c', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true });
+      adxChart._series.setData(adxData);
+      addRefLine(adxChart, 25, '#999');
+      adxChart.timeScale().fitContent();
+      document.getElementById('adxValue').textContent = adxData[adxData.length-1]?.value?.toFixed(2) || '—';
+    }
+  } else {
+    document.getElementById('adxPane').classList.add('hidden');
+  }
+  
+  // ATR Pane
+  if (activeInd.atr && indicatorData.atr) {
+    document.getElementById('atrPane').classList.remove('hidden');
+    if (!atrChart) { const a = createPaneChart('atrChart'); if (a) atrChart = a.chart; }
+    if (atrChart) {
+      try { atrChart.removeSeries(atrChart._series); } catch(e) {}
+      const atrData = timestamps.map((t,i) => ({time:t, value:indicatorData.atr[i]})).filter(d => d.value != null);
+      atrChart._series = atrChart.addLineSeries({ color:'#bf360c', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true });
+      atrChart._series.setData(atrData);
+      atrChart.timeScale().fitContent();
+      document.getElementById('atrValue').textContent = atrData[atrData.length-1]?.value?.toFixed(2) || '—';
+    }
+  } else {
+    document.getElementById('atrPane').classList.add('hidden');
+  }
+  
+  // MA & BB on main chart
+  if (mainChart) {
+    try {
+      if (mainChart._ma) mainChart.removeSeries(mainChart._ma);
+      if (mainChart._bbu) mainChart.removeSeries(mainChart._bbu);
+      if (mainChart._bbl) mainChart.removeSeries(mainChart._bbl);
+    } catch(e) {}
+    
+    if (activeInd.ma && indicatorData.ma) {
+      const maData = timestamps.map((t,i) => ({time:t, value:indicatorData.ma[i]})).filter(d => d.value != null);
+      mainChart._ma = mainChart.addLineSeries({ color:'#1a73e8', lineWidth: 1.5, priceLineVisible: false });
+      mainChart._ma.setData(maData);
+    }
+    
+    if (activeInd.bb && indicatorData.bb_upper) {
+      const bbUp = timestamps.map((t,i) => ({time:t, value:indicatorData.bb_upper[i]})).filter(d => d.value != null);
+      const bbLo = timestamps.map((t,i) => ({time:t, value:indicatorData.bb_lower[i]})).filter(d => d.value != null);
+      mainChart._bbu = mainChart.addLineSeries({ color:'#999', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+      mainChart._bbu.setData(bbUp);
+      mainChart._bbl = mainChart.addLineSeries({ color:'#999', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+      mainChart._bbl.setData(bbLo);
+    }
+  }
+  
+  resizeAllCharts();
 }
 
-async function updateMultiCharts() {
+function addRefLine(chart, value, color) {
+  try {
+    if (chart._refLines?.[value]) chart.removeSeries(chart._refLines[value]);
+    if (!chart._refLines) chart._refLines = {};
+    chart._refLines[value] = chart.addLineSeries({
+      color, lineWidth: 1, lineStyle: 2,
+      priceLineVisible: false, lastValueVisible: false,
+    });
+    const firstTime = allCandles[0]?.time;
+    const lastTime = allCandles[allCandles.length-1]?.time;
+    if (firstTime && lastTime) {
+      chart._refLines[value].setData([{time: firstTime, value}, {time: lastTime, value}]);
+    }
+  } catch(e) {}
+}
+
+async function updateMultiView() {
   if (!chartD) {
-    const d = createChart('chartDaily'); if (d) { chartD = d.chart; seriesD = d.series; }
-    const w = createChart('chartWeekly'); if (w) { chartW = w.chart; seriesW = w.series; }
-    const m = createChart('chartMonthly'); if (m) { chartM = m.chart; seriesM = m.series; }
+    const d = createPaneChart('chartD', true); if (d) { chartD = d.chart; seriesD = d.series; }
+    const w = createPaneChart('chartW', true); if (w) { chartW = w.chart; seriesW = w.series; }
+    const m = createPaneChart('chartM', true); if (m) { chartM = m.chart; seriesM = m.series; }
   }
   const [daily, weekly, monthly] = await Promise.all([
     fetchHistory(activeSymbol, 'daily'),
@@ -345,79 +493,69 @@ async function select(sym) {
   activeSymbol = sym;
   renderList(document.getElementById('search').value);
   await updateQuote();
-  if (multiview) await updateMultiCharts();
-  else await updateSingleChart();
+  if (multiview) await updateMultiView();
+  else await updateAllPanes();
 }
 
 async function setTF(tf) {
   timeframe = tf;
   document.querySelectorAll('#tfdaily, #tfweekly, #tfmonthly').forEach(b => b.classList.remove('active'));
   document.getElementById('tf'+tf)?.classList.add('active');
-  if (!multiview) await updateSingleChart();
+  if (!multiview) await updateAllPanes();
 }
 
 function toggleWatchlist() {
   wlOpen = !wlOpen;
-  document.getElementById('watchlistPanel').style.width = wlOpen ? '260px' : '0px';
-  document.getElementById('watchlistPanel').style.padding = wlOpen ? '' : '0';
+  document.getElementById('watchlistPanel').style.width = wlOpen ? '240px' : '0px';
   document.getElementById('watchlistPanel').style.border = wlOpen ? '' : 'none';
   setTimeout(resizeAllCharts, 350);
 }
 
 function toggleMultiview() {
   multiview = !multiview;
-  document.getElementById('singleChart').classList.toggle('hidden', multiview);
-  document.getElementById('multiCharts').classList.toggle('hidden', !multiview);
+  document.getElementById('singleView').classList.toggle('hidden', multiview);
+  document.getElementById('multiView').classList.toggle('hidden', !multiview);
   document.getElementById('mvBtn').classList.toggle('toggle', multiview);
-  if (multiview) updateMultiCharts();
-  else updateSingleChart();
+  document.getElementById('indicatorPanel').classList.toggle('hidden', multiview);
+  if (multiview) updateMultiView();
+  else updateAllPanes();
   setTimeout(resizeAllCharts, 100);
 }
 
-function toggleIndicatorPanel() {
+function toggleIndicators() {
   document.getElementById('indicatorPanel').classList.toggle('hidden');
   document.getElementById('indBtn').classList.toggle('toggle', !document.getElementById('indicatorPanel').classList.contains('hidden'));
-  setTimeout(resizeAllCharts, 100);
 }
 
 function toggleInd(name) {
-  activeIndicators[name] = document.getElementById('chk'+name.toUpperCase())?.checked || false;
-  updateIndSettings();
+  activeInd[name] = document.getElementById('chk'+name.toUpperCase())?.checked || false;
+  refreshIndicators();
 }
 
-function updateIndSettings() {
-  indSettings.maPeriod = parseInt(document.getElementById('maPeriod')?.value) || 20;
-  indSettings.bbPeriod = parseInt(document.getElementById('bbPeriod')?.value) || 20;
-  indSettings.bbStd = parseFloat(document.getElementById('bbStd')?.value) || 2;
-  indSettings.rsiPeriod = parseInt(document.getElementById('rsiPeriod')?.value) || 14;
-  indSettings.adxPeriod = parseInt(document.getElementById('adxPeriod')?.value) || 14;
-  indSettings.atrPeriod = parseInt(document.getElementById('atrPeriod')?.value) || 14;
-  indSettings.macdFast = parseInt(document.getElementById('macdFast')?.value) || 12;
-  indSettings.macdSlow = parseInt(document.getElementById('macdSlow')?.value) || 26;
-  indSettings.macdSignal = parseInt(document.getElementById('macdSignal')?.value) || 9;
-  activeIndicators.ma = document.getElementById('chkMA')?.checked || false;
-  activeIndicators.bb = document.getElementById('chkBB')?.checked || false;
-  activeIndicators.rsi = document.getElementById('chkRSI')?.checked || false;
-  activeIndicators.adx = document.getElementById('chkADX')?.checked || false;
-  activeIndicators.atr = document.getElementById('chkATR')?.checked || false;
-  activeIndicators.macd = document.getElementById('chkMACD')?.checked || false;
-  activeIndicators.volume = document.getElementById('chkVol')?.checked || false;
-  if (!multiview) updateSingleChart();
-}
-
-function resizeChart() {
-  if (chart) {
-    const el = document.getElementById('singleChart');
-    if (el) chart.applyOptions({width: el.clientWidth, height: el.clientHeight});
-  }
+function refreshIndicators() {
+  activeInd.volume = document.getElementById('chkVol')?.checked ?? true;
+  activeInd.ma = document.getElementById('chkMA')?.checked || false;
+  activeInd.bb = document.getElementById('chkBB')?.checked || false;
+  activeInd.rsi = document.getElementById('chkRSI')?.checked || false;
+  activeInd.macd = document.getElementById('chkMACD')?.checked || false;
+  activeInd.adx = document.getElementById('chkADX')?.checked || false;
+  activeInd.atr = document.getElementById('chkATR')?.checked || false;
+  
+  document.getElementById('volumePane').classList.toggle('hidden', !activeInd.volume);
+  
+  if (!multiview) updateAllPanes();
 }
 
 function resizeAllCharts() {
-  resizeChart();
-  [chartD, chartW, chartM].forEach((c, i) => {
+  ['mainChart','volumeChart','rsiChart','macdChart','adxChart','atrChart'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el._chart) {
+      el._chart.applyOptions({width: el.clientWidth, height: el.clientHeight});
+    }
+  });
+  [mainChart, volChart, rsiChart, macdChart, adxChart, atrChart, chartD, chartW, chartM].forEach(c => {
     if (c) {
-      const ids = ['chartDaily', 'chartWeekly', 'chartMonthly'];
-      const el = document.getElementById(ids[i]);
+      const el = document.getElementById(c._container?.id || '');
       if (el) c.applyOptions({width: el.clientWidth, height: el.clientHeight});
     }
   });
@@ -430,9 +568,16 @@ async function boot() {
   await loadStocks();
   renderList();
   await updateQuote();
-  const c = createChart('singleChart');
-  if (c) { chart = c.chart; mainSeries = c.series; }
-  await updateSingleChart();
+  
+  // Initialize main chart
+  const m = createPaneChart('mainChart', true);
+  if (m) { mainChart = m.chart; mainSeries = m.series; }
+  
+  // Initialize volume chart
+  const v = createPaneChart('volumeChart');
+  if (v) volChart = v.chart;
+  
+  await updateAllPanes();
 }
 boot();
 </script>
