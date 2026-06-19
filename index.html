@@ -13,10 +13,9 @@
     .stock-row { transition: background 0.15s; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
     .stock-row:hover { background: #f5f7fa; }
     .stock-row.active { background: #e8f0fe; border-left: 3px solid #1a73e8; }
-    .btn { transition: all 0.2s; border-radius: 6px; font-weight: 500; cursor: pointer; }
-    .btn-active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-    .btn-default { background: #f5f5f5; color: #555; border: 1px solid #ddd; }
-    .btn-toggle { background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
+    .btn { transition: all 0.2s; border-radius: 6px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 10px; padding: 4px 10px; }
+    .btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .btn.toggle { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
     .green { color: #0d8043; }
     .red { color: #d93025; }
     ::-webkit-scrollbar { width: 4px; }
@@ -27,6 +26,8 @@
       background: #fff; border: 1px solid #ddd; border-radius: 6px;
       padding: 8px 12px; font-size: 11px; font-family: monospace; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
+    .watchlist-open { width: 280px; }
+    .watchlist-closed { width: 0; overflow: hidden; padding: 0; border: none; }
   </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -34,45 +35,44 @@
   <!-- TOP BAR -->
   <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between flex-shrink-0">
     <div class="flex items-center gap-2">
+      <button onclick="toggleWatchlist()" id="wlToggle" class="text-gray-600 text-sm">☰</button>
       <span class="text-blue-600 font-bold text-sm">CHART<span class="text-gray-800">PRO</span></span>
       <span id="sourceLabel" class="text-[10px] text-green-600 font-medium">● NSE Live</span>
     </div>
     <div class="flex gap-1.5">
-      <button onclick="toggleMultiview()" id="mvBtn" class="btn btn-default text-[10px] px-3 py-1.5">📊 Multiview</button>
-      <button onclick="toggleIndicators()" id="indBtn" class="btn btn-default text-[10px] px-3 py-1.5">📈 Indicators</button>
+      <button onclick="toggleMultiview()" id="mvBtn" class="btn">📊 Multiview</button>
+      <button onclick="toggleIndicators()" id="indBtn" class="btn">📈 Indicators</button>
     </div>
   </div>
 
   <!-- MAIN -->
-  <div class="flex flex-1 overflow-hidden flex-col lg:flex-row">
+  <div class="flex flex-1 overflow-hidden">
     
     <!-- WATCHLIST -->
-    <div class="lg:w-[280px] w-full lg:h-full h-[35%] bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+    <div id="watchlistPanel" class="watchlist-open bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300">
       <div class="p-2 border-b border-gray-200">
-        <input type="text" id="search" placeholder="Search symbol..." class="w-full bg-gray-100 border border-gray-300 rounded px-3 py-2 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500">
+        <input type="text" id="search" placeholder="Search..." class="w-full bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500">
       </div>
-      <div class="px-3 py-1.5 text-[10px] text-gray-500 grid grid-cols-12 border-b border-gray-100 font-medium">
-        <span class="col-span-3">SYMBOL</span>
+      <div class="px-2 py-1 text-[9px] text-gray-500 grid grid-cols-12 border-b border-gray-100 font-medium">
+        <span class="col-span-3">SYM</span>
         <span class="col-span-3 text-right">PRICE</span>
         <span class="col-span-3 text-right">CHG</span>
-        <span class="col-span-3 text-right">CHG%</span>
+        <span class="col-span-3 text-right">%</span>
       </div>
       <div id="stockList" class="flex-1 overflow-y-auto"></div>
-      <div class="px-3 py-1.5 border-t border-gray-100 text-[10px] text-gray-400">
-        <span id="stockCount">—</span>
-      </div>
+      <div class="px-2 py-1 border-t border-gray-100 text-[9px] text-gray-400"><span id="stockCount">—</span></div>
     </div>
 
     <!-- CHART AREA -->
     <div class="flex-1 flex flex-col min-h-0 bg-[#f8f9fa]">
       
       <!-- STOCK HEADER -->
-      <div class="px-4 py-2 bg-white border-b border-gray-200">
+      <div class="px-3 py-2 bg-white border-b border-gray-200">
         <div class="flex justify-between items-start flex-wrap gap-2">
           <div>
             <div class="flex items-center gap-2">
               <h2 id="sym" class="text-base font-bold text-gray-900">—</h2>
-              <span id="sector" class="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500">—</span>
+              <span id="sector" class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">—</span>
             </div>
             <p id="name" class="text-[10px] text-gray-500">—</p>
           </div>
@@ -81,7 +81,7 @@
             <div id="change" class="text-xs font-semibold px-2 py-0.5 rounded">—</div>
           </div>
         </div>
-        <div class="flex gap-4 text-[10px] text-gray-500 mt-1" id="ohlcRow">
+        <div class="flex gap-3 text-[10px] text-gray-500 mt-1">
           <span>O <span id="op" class="text-gray-800 font-medium">—</span></span>
           <span>H <span id="hi" class="text-gray-800 font-medium">—</span></span>
           <span>L <span id="lo" class="text-gray-800 font-medium">—</span></span>
@@ -89,43 +89,43 @@
         </div>
       </div>
 
-      <!-- TIMEFRAME + DATA RANGE -->
-      <div class="flex gap-1.5 px-4 py-2 bg-white border-b border-gray-100 items-center flex-wrap">
-        <button onclick="setTF('daily')" id="tfdaily" class="btn btn-active text-[10px] px-3 py-1.5">Daily</button>
-        <button onclick="setTF('weekly')" id="tfweekly" class="btn btn-default text-[10px] px-3 py-1.5">Weekly</button>
-        <button onclick="setTF('monthly')" id="tfmonthly" class="btn btn-default text-[10px] px-3 py-1.5">Monthly</button>
+      <!-- TIMEFRAME -->
+      <div class="flex gap-1.5 px-3 py-1.5 bg-white border-b border-gray-100 items-center flex-wrap">
+        <button onclick="setTF('daily')" id="tfdaily" class="btn active">Daily</button>
+        <button onclick="setTF('weekly')" id="tfweekly" class="btn">Weekly</button>
+        <button onclick="setTF('monthly')" id="tfmonthly" class="btn">Monthly</button>
         <span id="dataRange" class="text-[9px] text-gray-400 ml-auto hidden sm:inline">—</span>
       </div>
 
       <!-- INDICATOR PANEL -->
-      <div id="indicatorPanel" class="hidden px-4 py-2 bg-white border-b border-gray-100 flex gap-2 flex-wrap">
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma20')" id="chkMA20"> MA 20</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma50')" id="chkMA50"> MA 50</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma200')" id="chkMA200"> MA 200</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('bb')" id="chkBB"> Bollinger</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('rsi')" id="chkRSI"> RSI</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('adx')" id="chkADX"> ADX</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('atr')" id="chkATR"> ATR</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('macd')" id="chkMACD"> MACD</label>
-        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('volume')" id="chkVol"> Volume</label>
+      <div id="indicatorPanel" class="hidden px-3 py-2 bg-white border-b border-gray-100">
+        <div class="flex gap-2 flex-wrap text-[10px]">
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('ma20')" id="chkMA20"> MA20</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('ma50')" id="chkMA50"> MA50</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('ma200')" id="chkMA200"> MA200</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('bb')" id="chkBB"> Bollinger</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('rsi')" id="chkRSI"> RSI</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('adx')" id="chkADX"> ADX</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('atr')" id="chkATR"> ATR</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('macd')" id="chkMACD"> MACD</label>
+          <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('volume')" id="chkVol"> Volume</label>
+        </div>
       </div>
 
-      <!-- CHART CONTAINER(S) -->
-      <div id="singleChart" class="flex-1 relative" style="min-height:200px;">
-        <div id="tooltip"></div>
-      </div>
+      <!-- CHARTS -->
+      <div id="singleChart" class="flex-1 relative" style="min-height:200px;"><div id="tooltip"></div></div>
       <div id="multiCharts" class="hidden flex-1 flex flex-col" style="min-height:200px;">
-        <div id="chartDaily" class="flex-1 relative border-b border-gray-200" style="min-height:150px;"></div>
-        <div id="chartWeekly" class="flex-1 relative border-b border-gray-200" style="min-height:150px;"></div>
-        <div id="chartMonthly" class="flex-1 relative" style="min-height:150px;"></div>
+        <div id="chartDaily" class="flex-1 relative border-b border-gray-200"></div>
+        <div id="chartWeekly" class="flex-1 relative border-b border-gray-200"></div>
+        <div id="chartMonthly" class="flex-1 relative"></div>
       </div>
     </div>
   </div>
 
 <script>
 const API = 'https://chartpro.onrender.com';
-let stocks = [], activeSymbol = 'RELIANCE', timeframe = 'daily', multiview = false;
-let chart = null, series = {}, indicators = {};
+let stocks = [], activeSymbol = 'RELIANCE', timeframe = 'daily', multiview = false, wlOpen = true;
+let chart = null, mainSeries = null, indicatorSeries = {};
 let chartD = null, chartW = null, chartM = null;
 let seriesD = null, seriesW = null, seriesM = null;
 let indicatorData = null;
@@ -155,6 +155,8 @@ async function fetchIndicators(sym, tf) {
 
 function createChart(containerId) {
   const el = document.getElementById(containerId);
+  if (!el) return null;
+  
   const c = LightweightCharts.createChart(el, {
     layout: { background: { type:'solid', color:'#fff' }, textColor:'#333' },
     grid: { vertLines: { color:'#eee' }, horzLines: { color:'#eee' } },
@@ -165,42 +167,111 @@ function createChart(containerId) {
     width: el.clientWidth, height: el.clientHeight,
   });
   
-  const mainSeries = c.addCandlestickSeries({
+  const s = c.addCandlestickSeries({
     upColor:'#0d8043', downColor:'#d93025',
     borderUpColor:'#0d8043', borderDownColor:'#d93025',
     wickUpColor:'#0d8043', wickDownColor:'#d93025',
   });
   
-  c.subscribeCrosshairMove(param => {
-    if (containerId !== 'singleChart') return;
-    const t = document.getElementById('tooltip');
-    if (!param.time || !param.point) { t.style.display='none'; return; }
-    const d = param.seriesData.get(mainSeries);
-    if (d) {
-      document.getElementById('op').textContent = '₹'+d.open.toFixed(2);
-      document.getElementById('hi').textContent = '₹'+d.high.toFixed(2);
-      document.getElementById('lo').textContent = '₹'+d.low.toFixed(2);
-      document.getElementById('cl').textContent = '₹'+d.close.toFixed(2);
-      t.style.display='block';
-      t.innerHTML = `<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div>`;
-      const r = el.getBoundingClientRect();
-      t.style.left = Math.min(param.point.x+15, r.width-150)+'px';
-      t.style.top = Math.max(param.point.y-60, 5)+'px';
-    }
-  });
+  if (containerId === 'singleChart') {
+    c.subscribeCrosshairMove(param => {
+      const t = document.getElementById('tooltip');
+      if (!param.time || !param.point) { t.style.display='none'; return; }
+      const d = param.seriesData.get(s);
+      if (d) {
+        document.getElementById('op').textContent = '₹'+d.open.toFixed(2);
+        document.getElementById('hi').textContent = '₹'+d.high.toFixed(2);
+        document.getElementById('lo').textContent = '₹'+d.low.toFixed(2);
+        document.getElementById('cl').textContent = '₹'+d.close.toFixed(2);
+        t.style.display='block';
+        t.innerHTML = `<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div>`;
+        const r = el.getBoundingClientRect();
+        t.style.left = Math.min(param.point.x+15, r.width-150)+'px';
+        t.style.top = Math.max(param.point.y-60, 5)+'px';
+      }
+    });
+  }
   
-  return { chart:c, mainSeries };
+  return { chart:c, series:s };
+}
+
+function clearIndicators() {
+  Object.keys(indicatorSeries).forEach(k => {
+    try { chart.removeSeries(indicatorSeries[k]); } catch(e) {}
+  });
+  indicatorSeries = {};
+}
+
+function addIndicator(name, color, data, type='line') {
+  if (!chart || !indicatorData || !data) return;
+  
+  const lineData = indicatorData.timestamps.map((t, i) => ({
+    time: t,
+    value: data[i]
+  })).filter(d => d.value !== null && d.value !== undefined && !isNaN(d.value));
+  
+  if (lineData.length < 2) return;
+  
+  if (type === 'line') {
+    indicatorSeries[name] = chart.addLineSeries({
+      color, lineWidth: 1.5,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    indicatorSeries[name].setData(lineData);
+  } else if (type === 'histogram') {
+    indicatorSeries[name] = chart.addHistogramSeries({
+      color,
+      priceFormat: { type:'volume' },
+      priceScaleId: name+'_scale',
+    });
+    chart.priceScale(name+'_scale').applyOptions({
+      scaleMargins: { top: 0.85, bottom: 0 },
+      visible: false,
+    });
+    indicatorSeries[name].setData(lineData);
+  }
+}
+
+function applyIndicators() {
+  if (!chart || !indicatorData) return;
+  clearIndicators();
+  
+  if (activeIndicators['ma20']) addIndicator('ma20', '#1a73e8', indicatorData.ma20);
+  if (activeIndicators['ma50']) addIndicator('ma50', '#e37400', indicatorData.ma50);
+  if (activeIndicators['ma200']) addIndicator('ma200', '#d93025', indicatorData.ma200);
+  if (activeIndicators['bb']) {
+    addIndicator('bb_upper', '#999', indicatorData.bb_upper);
+    addIndicator('bb_lower', '#999', indicatorData.bb_lower);
+    addIndicator('bb_middle', '#666', indicatorData.bb_middle);
+  }
+  if (activeIndicators['volume']) {
+    addIndicator('volume', '#e0e0e0', indicatorData.timestamps.map((_,i) => 
+      indicatorData.timestamps[i] ? 1000000 : null
+    ), 'histogram');
+  }
+  if (activeIndicators['rsi']) addIndicator('rsi', '#7b1fa2', indicatorData.rsi);
+  if (activeIndicators['adx']) addIndicator('adx', '#00695c', indicatorData.adx);
+  if (activeIndicators['atr']) addIndicator('atr', '#bf360c', indicatorData.atr);
+  if (activeIndicators['macd']) {
+    addIndicator('macd_line', '#1a73e8', indicatorData.macd_line);
+    addIndicator('signal_line', '#d93025', indicatorData.signal_line);
+    addIndicator('macd_hist', '#ff9800', indicatorData.macd_histogram);
+  }
 }
 
 async function updateSingleChart() {
   if (!chart) {
     const c = createChart('singleChart');
+    if (!c) return;
     chart = c.chart;
-    series.main = c.mainSeries;
+    mainSeries = c.series;
   }
+  
   const data = await fetchHistory(activeSymbol, timeframe);
   if (!data?.candles?.length) return;
-  series.main.setData(data.candles);
+  
+  mainSeries.setData(data.candles);
   chart.timeScale().fitContent();
   
   const last = data.candles[data.candles.length-1];
@@ -210,27 +281,26 @@ async function updateSingleChart() {
   document.getElementById('cl').textContent = '₹'+last.close.toFixed(2);
   document.getElementById('dataRange').textContent = data.from+' → '+data.to;
   
-  // Load indicators
   indicatorData = await fetchIndicators(activeSymbol, timeframe);
   applyIndicators();
 }
 
 async function updateMultiCharts() {
   if (!chartD) {
-    const d = createChart('chartDaily'); chartD = d.chart; seriesD = d.mainSeries;
-    const w = createChart('chartWeekly'); chartW = w.chart; seriesW = w.mainSeries;
-    const m = createChart('chartMonthly'); chartM = m.chart; seriesM = m.mainSeries;
+    const d = createChart('chartDaily'); if (d) { chartD = d.chart; seriesD = d.series; }
+    const w = createChart('chartWeekly'); if (w) { chartW = w.chart; seriesW = w.series; }
+    const m = createChart('chartMonthly'); if (m) { chartM = m.chart; seriesM = m.series; }
   }
   
-  const [dailyData, weeklyData, monthlyData] = await Promise.all([
+  const [daily, weekly, monthly] = await Promise.all([
     fetchHistory(activeSymbol, 'daily'),
     fetchHistory(activeSymbol, 'weekly'),
     fetchHistory(activeSymbol, 'monthly')
   ]);
   
-  if (dailyData?.candles) { seriesD.setData(dailyData.candles); chartD.timeScale().fitContent(); }
-  if (weeklyData?.candles) { seriesW.setData(weeklyData.candles); chartW.timeScale().fitContent(); }
-  if (monthlyData?.candles) { seriesM.setData(monthlyData.candles); chartM.timeScale().fitContent(); }
+  if (daily?.candles && seriesD) { seriesD.setData(daily.candles); chartD.timeScale().fitContent(); }
+  if (weekly?.candles && seriesW) { seriesW.setData(weekly.candles); chartW.timeScale().fitContent(); }
+  if (monthly?.candles && seriesM) { seriesM.setData(monthly.candles); chartM.timeScale().fitContent(); }
 }
 
 async function updateQuote() {
@@ -251,11 +321,11 @@ function renderList(f='') {
   document.getElementById('stockList').innerHTML = filtered.map(s => {
     const a = s.symbol===activeSymbol;
     const up = (s.cp||0)>=0;
-    return `<div class="stock-row grid grid-cols-12 gap-1 px-3 py-2 text-[11px] ${a?'active':''}" onclick="select('${s.symbol}')">
+    return `<div class="stock-row grid grid-cols-12 gap-1 px-2 py-1.5 text-[10px] ${a?'active':''}" onclick="select('${s.symbol}')">
       <span class="col-span-3 font-semibold text-gray-900 truncate">${s.symbol}</span>
       <span class="col-span-3 text-right font-mono text-gray-700">${s.price?'₹'+s.price.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</span>
       <span class="col-span-3 text-right font-mono ${up?'green':'red'}">${s.change?(s.change>=0?'+':'')+s.change.toFixed(2):'—'}</span>
-      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] ${up?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span>
+      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[9px] ${up?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span>
     </div>`;
   }).join('');
   document.getElementById('stockCount').textContent = filtered.length+' stocks';
@@ -271,88 +341,45 @@ async function select(sym) {
 
 async function setTF(tf) {
   timeframe = tf;
-  ['daily','weekly','monthly'].forEach(t => {
-    document.getElementById('tf'+t)?.classList.remove('btn-active');
-    document.getElementById('tf'+t)?.classList.add('btn-default');
-  });
-  document.getElementById('tf'+tf)?.classList.add('btn-active');
-  document.getElementById('tf'+tf)?.classList.remove('btn-default');
-  
+  document.querySelectorAll('#tfdaily, #tfweekly, #tfmonthly').forEach(b => b.classList.remove('active'));
+  document.getElementById('tf'+tf)?.classList.add('active');
   if (!multiview) await updateSingleChart();
 }
 
-async function toggleMultiview() {
+function toggleWatchlist() {
+  wlOpen = !wlOpen;
+  const panel = document.getElementById('watchlistPanel');
+  panel.className = wlOpen ? 'watchlist-open bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300' : 'watchlist-closed bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-all duration-300';
+  document.getElementById('wlToggle').textContent = wlOpen ? '☰' : '☰';
+}
+
+function toggleMultiview() {
   multiview = !multiview;
   document.getElementById('singleChart').classList.toggle('hidden', multiview);
   document.getElementById('multiCharts').classList.toggle('hidden', !multiview);
-  document.getElementById('mvBtn').classList.toggle('btn-toggle', multiview);
-  document.getElementById('mvBtn').classList.toggle('btn-default', !multiview);
-  
-  if (multiview) await updateMultiCharts();
-  else await updateSingleChart();
+  document.getElementById('mvBtn').classList.toggle('toggle', multiview);
+  if (multiview) updateMultiCharts();
+  else updateSingleChart();
 }
 
 function toggleIndicators() {
   const panel = document.getElementById('indicatorPanel');
   panel.classList.toggle('hidden');
-  document.getElementById('indBtn').classList.toggle('btn-toggle', !panel.classList.contains('hidden'));
+  document.getElementById('indBtn').classList.toggle('toggle', !panel.classList.contains('hidden'));
 }
 
-function toggleIndicator(name) {
+function toggleInd(name) {
   activeIndicators[name] = !activeIndicators[name];
-  applyIndicators();
-}
-
-function applyIndicators() {
-  if (!indicatorData) return;
-  // Clear old indicator series
-  Object.keys(series).forEach(k => {
-    if (k !== 'main' && series[k]) {
-      try { chart.removeSeries(series[k]); } catch(e) {}
-      delete series[k];
-    }
-  });
-  
-  if (activeIndicators['ma20'] && indicatorData.ma20) addLineSeries('ma20', '#2962ff', indicatorData.ma20);
-  if (activeIndicators['ma50'] && indicatorData.ma50) addLineSeries('ma50', '#ff6d00', indicatorData.ma50);
-  if (activeIndicators['ma200'] && indicatorData.ma200) addLineSeries('ma200', '#d93025', indicatorData.ma200);
-  if (activeIndicators['bb'] && indicatorData.bb_upper) {
-    addLineSeries('bb_upper', '#999', indicatorData.bb_upper);
-    addLineSeries('bb_lower', '#999', indicatorData.bb_lower);
-  }
-  if (activeIndicators['volume']) {
-    series.volume = chart.addHistogramSeries({
-      color: '#e0e0e0',
-      priceFormat: { type:'volume' },
-      priceScaleId: 'volume',
-    });
-    chart.priceScale('volume').applyOptions({ scaleMargins:{top:0.85,bottom:0}, visible:false });
-  }
-}
-
-function addLineSeries(name, color, data) {
-  if (!chart || !indicatorData) return;
-  const lineData = indicatorData.timestamps.map((t, i) => ({
-    time: t,
-    value: data[i]
-  })).filter(d => d.value !== null && d.value !== undefined);
-  
-  if (lineData.length > 0) {
-    series[name] = chart.addLineSeries({
-      color, lineWidth: 1.5,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-    series[name].setData(lineData);
-  }
+  if (!multiview) applyIndicators();
 }
 
 document.getElementById('search').addEventListener('input', function(){renderList(this.value);});
+
 window.addEventListener('resize', () => {
   [chart, chartD, chartW, chartM].forEach(c => {
     if (c) {
-      const parent = c._container || document.getElementById('singleChart');
-      if (parent) c.applyOptions({width:parent.clientWidth, height:parent.clientHeight});
+      const el = c._container;
+      if (el) c.applyOptions({width:el.clientWidth, height:el.clientHeight});
     }
   });
 });
@@ -362,8 +389,7 @@ async function boot() {
   renderList();
   await updateQuote();
   const c = createChart('singleChart');
-  chart = c.chart;
-  series.main = c.mainSeries;
+  if (c) { chart = c.chart; mainSeries = c.series; }
   await updateSingleChart();
 }
 boot();
