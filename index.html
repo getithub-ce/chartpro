@@ -3,133 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ChartPro • NSE Trading</title>
+  <title>ChartPro • NSE Charts</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; height: 100vh; width: 100vw; overflow: hidden; position: fixed; }
-    .stock-row { transition: background 0.15s; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-    .stock-row:hover { background: #f5f7fa; }
-    .stock-row.active { background: #e8f0fe; border-left: 3px solid #1a73e8; }
-    .btn { transition: all 0.2s; border-radius: 5px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #f5f5f5; color: #555; font-size: 10px; padding: 4px 8px; }
-    .btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
-    .btn.toggle { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
-    .green { color: #0d8043; } .red { color: #d93025; }
-    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-track { background: #f0f0f0; } ::-webkit-scrollbar-thumb { background: #ccc; }
-    .chart-wrap { flex: 1; min-height: 0; position: relative; }
-    .pane-box { border-bottom: 1px solid #ddd; background: #fff; position: relative; }
-    .pane-title { font-size: 9px; color: #888; padding: 1px 6px; background: #fafafa; border-bottom: 1px solid #eee; }
-    #tooltip { position: absolute; z-index: 999; pointer-events: none; display: none; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 10px; font-family: monospace; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#333;height:100vh;width:100vw;overflow:hidden;position:fixed}
+    .stock-row{transition:background .15s;border-bottom:1px solid #f0f0f0;cursor:pointer}
+    .stock-row:hover{background:#f5f7fa}
+    .stock-row.active{background:#e8f0fe;border-left:3px solid #1a73e8}
+    .btn{transition:all .2s;border-radius:4px;font-weight:500;cursor:pointer;border:1px solid #d1d5db;background:#f9fafb;color:#555;font-size:11px;padding:5px 12px}
+    .btn:hover{background:#e5e7eb}
+    .btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+    .green{color:#16a34a}.red{color:#dc2626}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#f9fafb}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}
+    .pane-label{font-size:10px;color:#9ca3af;padding:2px 8px;background:#fafafa;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+    #tooltip{position:absolute;z-index:999;pointer-events:none;display:none;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:8px 12px;font-size:11px;font-family:monospace;box-shadow:0 4px 12px rgba(0,0,0,.1)}
   </style>
 </head>
 <body class="flex flex-col h-screen">
 
-  <div class="bg-white border-b border-gray-200 px-2 py-1.5 flex items-center justify-between flex-shrink-0">
+  <!-- HEADER -->
+  <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white flex-shrink-0">
     <div class="flex items-center gap-2">
-      <button onclick="toggleWL()" class="text-gray-600 text-base px-1">☰</button>
-      <span class="text-blue-600 font-bold text-sm">CHART<span class="text-gray-800">PRO</span></span>
+      <button onclick="toggleWL()" class="text-gray-500 text-lg px-1">☰</button>
+      <span class="text-blue-600 font-bold">CHART<span class="text-gray-800">PRO</span></span>
     </div>
-    <div class="flex gap-1">
-      <button onclick="toggleMV()" id="mvBtn" class="btn">📊 Multi</button>
-      <button onclick="toggleIndPanel()" id="indBtn" class="btn">📈 Indicators</button>
+    <div class="flex gap-1.5">
+      <button onclick="toggleMV()" id="mvBtn" class="btn">Multi</button>
+      <button onclick="toggleIndPanel()" id="indBtn" class="btn">Indicators</button>
     </div>
   </div>
 
-  <div id="indPanel" class="hidden bg-white border-b border-gray-200 px-2 py-1 flex-shrink-0 flex flex-wrap gap-x-2 gap-y-1 text-[10px]">
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('volume')" id="chkVol" checked> Vol</label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('ma')" id="chkMA"> MA<input type="number" value="20" id="maP" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('bb')" id="chkBB"> BB<input type="number" value="20" id="bbP" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"><input type="number" value="2" step="0.5" id="bbS" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('rsi')" id="chkRSI"> RSI<input type="number" value="14" id="rsiP" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('macd')" id="chkMACD"> MACD<input type="number" value="12" id="macdF" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"><input type="number" value="26" id="macdS" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"><input type="number" value="9" id="macdSig" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('adx')" id="chkADX"> ADX<input type="number" value="14" id="adxP" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
-    <label class="flex items-center gap-1"><input type="checkbox" onchange="toggleInd('atr')" id="chkATR"> ATR<input type="number" value="14" id="atrP" onchange="reloadInd()" style="width:35px;border:1px solid #ddd;border-radius:3px;padding:1px 3px;font-size:10px;"></label>
+  <!-- INDICATOR CONTROLS -->
+  <div id="indPanel" class="hidden bg-white border-b border-gray-200 px-3 py-1.5 flex-shrink-0 flex flex-wrap gap-x-3 gap-y-1 text-[11px] items-center">
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked onchange="toggleInd('vol')"> Vol</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('ma')"> MA</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('bb')"> BB</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('rsi')"> RSI</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('macd')"> MACD</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('adx')"> ADX</label>
+    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" onchange="toggleInd('atr')"> ATR</label>
   </div>
 
+  <!-- MAIN LAYOUT -->
   <div class="flex flex-1 overflow-hidden">
     
-    <div id="wlPanel" class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden" style="width:240px; transition: width 0.3s;">
-      <div class="p-1.5 border-b border-gray-200"><input type="text" id="search" placeholder="Search..." class="w-full bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-[11px] text-gray-700 focus:outline-none focus:border-blue-500"></div>
-      <div class="px-2 py-1 text-[9px] text-gray-500 grid grid-cols-12 border-b border-gray-100"><span class="col-span-3">SYM</span><span class="col-span-3 text-right">PRICE</span><span class="col-span-3 text-right">CHG</span><span class="col-span-3 text-right">%</span></div>
+    <!-- WATCHLIST -->
+    <div id="wlPanel" class="bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden" style="width:240px;transition:width .3s">
+      <div class="p-2 border-b border-gray-200"><input type="text" id="search" placeholder="Search..." class="w-full bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-[11px] focus:outline-none focus:border-blue-500"></div>
+      <div class="px-2 py-1 text-[9px] text-gray-400 grid grid-cols-12 border-b border-gray-100"><span class="col-span-3">SYM</span><span class="col-span-3 text-right">PRICE</span><span class="col-span-3 text-right">CHG</span><span class="col-span-3 text-right">%</span></div>
       <div id="stockList" class="flex-1 overflow-y-auto"></div>
       <div class="px-2 py-1 border-t border-gray-100 text-[9px] text-gray-400"><span id="stockCount">—</span></div>
     </div>
 
-    <div class="flex-1 flex flex-col min-h-0 bg-[#f8f9fa]">
+    <!-- CHART AREA -->
+    <div class="flex-1 flex flex-col min-h-0 bg-white">
       
-      <div class="px-3 py-1.5 bg-white border-b border-gray-200 flex-shrink-0">
-        <div class="flex justify-between items-start flex-wrap gap-2">
+      <!-- STOCK INFO -->
+      <div class="px-3 py-2 border-b border-gray-200 flex-shrink-0">
+        <div class="flex justify-between items-start">
           <div><h2 id="sym" class="text-sm font-bold text-gray-900">—</h2><p id="name" class="text-[10px] text-gray-500">—</p></div>
           <div class="text-right"><div id="price" class="text-lg font-mono font-bold text-gray-900">₹—</div><div id="change" class="text-[10px] font-semibold px-1.5 py-0.5 rounded">—</div></div>
         </div>
-        <div class="flex gap-3 text-[9px] text-gray-500 mt-0.5"><span>O <span id="op" class="text-gray-800 font-medium">—</span></span><span>H <span id="hi" class="text-gray-800 font-medium">—</span></span><span>L <span id="lo" class="text-gray-800 font-medium">—</span></span><span>C <span id="cl" class="text-gray-800 font-medium">—</span></span></div>
+        <div class="flex gap-3 text-[9px] text-gray-500 mt-0.5">
+          <span>O <span id="op" class="text-gray-800 font-medium">—</span></span>
+          <span>H <span id="hi" class="text-gray-800 font-medium">—</span></span>
+          <span>L <span id="lo" class="text-gray-800 font-medium">—</span></span>
+          <span>C <span id="cl" class="text-gray-800 font-medium">—</span></span>
+        </div>
       </div>
 
-      <div class="flex gap-1 px-2 py-1 bg-white border-b border-gray-100 flex-shrink-0">
+      <!-- TIMEFRAME -->
+      <div class="flex gap-1 px-3 py-1.5 border-b border-gray-100 flex-shrink-0">
         <button onclick="setTF('daily')" id="tfdaily" class="btn active">Daily</button>
         <button onclick="setTF('weekly')" id="tfweekly" class="btn">Weekly</button>
         <button onclick="setTF('monthly')" id="tfmonthly" class="btn">Monthly</button>
-        <span id="dataRange" class="text-[9px] text-gray-400 ml-auto hidden sm:inline">—</span>
+        <span id="dataRange" class="text-[9px] text-gray-400 ml-auto self-center hidden sm:inline">—</span>
       </div>
 
-      <div id="singleView" class="chart-wrap" style="display:flex;flex-direction:column;">
-        <div id="mainPane" class="pane-box" style="flex:5; min-height:150px;"></div>
-        <div id="volPane" class="pane-box" style="flex:1; min-height:40px;"><div class="pane-title">Volume</div><div id="volChart" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div id="rsiPane" class="pane-box hidden" style="flex:1.5; min-height:60px;"><div class="pane-title">RSI <span id="rsiVal" class="font-mono text-gray-600">—</span></div><div id="rsiChart" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div id="macdPane" class="pane-box hidden" style="flex:1.5; min-height:60px;"><div class="pane-title">MACD <span id="macdVal" class="font-mono text-gray-600">—</span></div><div id="macdChart" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div id="adxPane" class="pane-box hidden" style="flex:1; min-height:50px;"><div class="pane-title">ADX <span id="adxVal" class="font-mono text-gray-600">—</span></div><div id="adxChart" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div id="atrPane" class="pane-box hidden" style="flex:1; min-height:50px;"><div class="pane-title">ATR <span id="atrVal" class="font-mono text-gray-600">—</span></div><div id="atrChart" style="width:100%;height:calc(100% - 14px);"></div></div>
+      <!-- SINGLE VIEW -->
+      <div id="singleView" class="flex-1 flex flex-col min-h-0">
+        <div id="mainChart" class="flex-[5]" style="min-height:150px"></div>
+        <div id="volChart" class="flex-[1]" style="min-height:40px;border-top:1px solid #f0f0f0"><div class="pane-label">Volume</div><div id="volInner" style="height:calc(100% - 18px)"></div></div>
+        <div id="rsiChart" class="hidden flex-[1.5]" style="min-height:60px;border-top:1px solid #f0f0f0"><div class="pane-label">RSI <span id="rsiVal" class="font-mono">—</span></div><div id="rsiInner" style="height:calc(100% - 18px)"></div></div>
+        <div id="macdChart" class="hidden flex-[1.5]" style="min-height:60px;border-top:1px solid #f0f0f0"><div class="pane-label">MACD <span id="macdVal" class="font-mono">—</span></div><div id="macdInner" style="height:calc(100% - 18px)"></div></div>
+        <div id="adxChart" class="hidden flex-[1]" style="min-height:50px;border-top:1px solid #f0f0f0"><div class="pane-label">ADX <span id="adxVal" class="font-mono">—</span></div><div id="adxInner" style="height:calc(100% - 18px)"></div></div>
+        <div id="atrChart" class="hidden flex-[1]" style="min-height:50px;border-top:1px solid #f0f0f0"><div class="pane-label">ATR <span id="atrVal" class="font-mono">—</span></div><div id="atrInner" style="height:calc(100% - 18px)"></div></div>
       </div>
 
-      <div id="multiView" class="chart-wrap hidden" style="display:flex;flex-direction:column;">
-        <div class="pane-box" style="flex:1; min-height:100px;"><div class="pane-title">Daily</div><div id="mvD" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div class="pane-box" style="flex:1; min-height:100px;"><div class="pane-title">Weekly</div><div id="mvW" style="width:100%;height:calc(100% - 14px);"></div></div>
-        <div class="pane-box" style="flex:1; min-height:100px;"><div class="pane-title">Monthly</div><div id="mvM" style="width:100%;height:calc(100% - 14px);"></div></div>
+      <!-- MULTI VIEW -->
+      <div id="multiView" class="hidden flex-1 flex flex-col min-h-0">
+        <div class="flex-1 border-b border-gray-200"><div class="pane-label">Daily</div><div id="mvDaily" style="height:calc(100% - 18px)"></div></div>
+        <div class="flex-1 border-b border-gray-200"><div class="pane-label">Weekly</div><div id="mvWeekly" style="height:calc(100% - 18px)"></div></div>
+        <div class="flex-1"><div class="pane-label">Monthly</div><div id="mvMonthly" style="height:calc(100% - 18px)"></div></div>
       </div>
     </div>
   </div>
   <div id="tooltip"></div>
 
 <script>
-const API = 'https://chartpro.onrender.com';
-let stocks=[], active='RELIANCE', tf='daily', multi=false, wlOpen=true;
-let mc=null, ms=null, vc=null, vs=null;
-let rc=null, macdc=null, adxc=null, atrc=null;
-let mvd=null, mvw=null, mvm=null, sd=null, sw=null, sm=null;
-let candles=[], idata=null;
-let actInd={volume:true,ma:false,bb:false,rsi:false,macd:false,adx:false,atr:false};
+const API='https://chartpro.onrender.com';
+let stocks=[],active='RELIANCE',tf='daily',multi=false,wlOpen=true;
+let mainChart,mainSeries,volChart,volSeries,rsiChart,macdChart,adxChart,atrChart;
+let mvD,mvW,mvM,sD,sW,sM;
+let candles=[],idata=null;
+let actInd={vol:true,ma:false,bb:false,rsi:false,macd:false,adx:false,atr:false};
 
-async function loadStocks(){try{const r=await fetch(API+'/stocks');if(r.ok)stocks=(await r.json()).map(s=>({...s,price:0,change:0,cp:0}));}catch(e){}}
-async function fetchQuote(sym){const r=await fetch(API+'/quote/'+sym);return r.ok?await r.json():null}
-async function fetchHistory(sym,t){const r=await fetch(API+'/history/'+sym+'/'+t);return r.ok?await r.json():null}
-async function fetchInd(sym,t){
-  const p=new URLSearchParams({
-    maPeriod:document.getElementById('maP')?.value||20,bbPeriod:document.getElementById('bbP')?.value||20,bbStd:document.getElementById('bbS')?.value||2,
-    rsiPeriod:document.getElementById('rsiP')?.value||14,adxPeriod:document.getElementById('adxP')?.value||14,atrPeriod:document.getElementById('atrP')?.value||14,
-    macdFast:document.getElementById('macdF')?.value||12,macdSlow:document.getElementById('macdS')?.value||26,macdSignal:document.getElementById('macdSig')?.value||9
-  });
-  const r=await fetch(API+'/indicators/'+sym+'/'+t+'?'+p.toString());
-  return r.ok?await r.json():null;
-}
-
-function mkChart(elId,main){
+function mkChart(elId,isMain){
   const el=document.getElementById(elId);
-  if(!el||!el.clientWidth||!el.clientHeight)return null;
+  if(!el||el.clientWidth<10||el.clientHeight<10)return null;
   const c=LightweightCharts.createChart(el,{
-    layout:{background:{type:'solid',color:'#fff'},textColor:main?'#333':'#666'},
-    grid:{vertLines:{color:'#eee'},horzLines:{color:'#eee'}},
-    crosshair:main?{mode:1}:{mode:0},
-    rightPriceScale:{borderColor:'#ddd',autoScale:true,scaleMargins:main?{top:0.08,bottom:0.15}:{top:0.05,bottom:0.05}},
-    timeScale:{borderColor:'#ddd',timeVisible:!!main,visible:!!main},
-    localization:{priceFormatter:p=>main?'₹'+p.toFixed(2):p.toFixed(2)},
+    layout:{background:{type:'solid',color:'#fff'},textColor:isMain?'#333':'#888'},
+    grid:{vertLines:{color:'#f5f5f5'},horzLines:{color:'#f5f5f5'}},
+    crosshair:isMain?{mode:1}:{mode:0},
+    rightPriceScale:{borderColor:'#e5e7eb',autoScale:true,scaleMargins:isMain?{top:.08,bottom:.15}:{top:.05,bottom:.05}},
+    timeScale:{borderColor:'#e5e7eb',timeVisible:!!isMain,visible:!!isMain},
+    localization:{priceFormatter:p=>isMain?'₹'+p.toFixed(2):p.toFixed(2)},
     width:el.clientWidth,height:el.clientHeight
   });
   let s=null;
-  if(main){
-    s=c.addCandlestickSeries({upColor:'#0d8043',downColor:'#d93025',borderUpColor:'#0d8043',borderDownColor:'#d93025',wickUpColor:'#0d8043',wickDownColor:'#d93025'});
+  if(isMain){
+    s=c.addCandlestickSeries({upColor:'#16a34a',downColor:'#dc2626',borderUpColor:'#16a34a',borderDownColor:'#dc2626',wickUpColor:'#16a34a',wickDownColor:'#dc2626'});
     c.subscribeCrosshairMove(param=>{
       const t=document.getElementById('tooltip');
-      if(!param.time||!param.point){t.style.display='none';return;}
+      if(!param.time||!param.point){t.style.display='none';return}
       const d=param.seriesData.get(s);
       if(d){
         document.getElementById('op').textContent='₹'+d.open.toFixed(2);
@@ -137,23 +135,23 @@ function mkChart(elId,main){
         document.getElementById('lo').textContent='₹'+d.low.toFixed(2);
         document.getElementById('cl').textContent='₹'+d.close.toFixed(2);
         t.style.display='block';
-        t.innerHTML=`<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:12px;font-weight:bold">₹${d.close.toFixed(2)}</div><div style="color:#888">O ₹${d.open.toFixed(2)} H ₹${d.high.toFixed(2)} L ₹${d.low.toFixed(2)}</div>`;
+        t.innerHTML=`<div style="color:#888">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div><div style="color:#aaa;font-size:10px">O ₹${d.open.toFixed(2)} H ₹${d.high.toFixed(2)} L ₹${d.low.toFixed(2)} C ₹${d.close.toFixed(2)}</div>`;
         const r=el.getBoundingClientRect();
-        t.style.left=Math.min(param.point.x+15,r.width-150)+'px';
-        t.style.top=Math.max(param.point.y-65,5)+'px';
+        t.style.left=Math.min(param.point.x+15,r.width-160)+'px';
+        t.style.top=Math.max(param.point.y-70,5)+'px';
       }
     });
   }
   return {chart:c,series:s};
 }
 
-function addRef(c,v,color){
-  try{
-    if(!c._refs)c._refs={};
-    if(c._refs[v])c.removeSeries(c._refs[v]);
-    c._refs[v]=c.addLineSeries({color,lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});
-    if(candles.length>1)c._refs[v].setData([{time:candles[0].time,value:v},{time:candles[candles.length-1].time,value:v}]);
-  }catch(e){}
+async function loadStocks(){try{const r=await fetch(API+'/stocks');if(r.ok)stocks=(await r.json()).map(s=>({...s,price:0,change:0,cp:0}));}catch(e){}}
+async function fetchQuote(sym){const r=await fetch(API+'/quote/'+sym);return r.ok?await r.json():null}
+async function fetchHistory(sym,t){const r=await fetch(API+'/history/'+sym+'/'+t);return r.ok?await r.json():null}
+async function fetchInd(sym,t){
+  const p=new URLSearchParams({maPeriod:20,bbPeriod:20,bbStd:2,rsiPeriod:14,adxPeriod:14,atrPeriod:14,macdFast:12,macdSlow:26,macdSignal:9});
+  const r=await fetch(API+'/indicators/'+sym+'/'+t+'?'+p.toString());
+  return r.ok?await r.json():null;
 }
 
 async function updateAll(){
@@ -161,81 +159,65 @@ async function updateAll(){
   if(!data?.candles?.length)return;
   candles=data.candles;
   
-  // Main
-  if(!mc){const m=mkChart('mainPane',true);if(m){mc=m.chart;ms=m.series;}}
-  if(ms){ms.setData(candles);mc.timeScale().fitContent();}
+  // Main chart
+  if(!mainChart){const m=mkChart('mainChart',true);if(m){mainChart=m.chart;mainSeries=m.series;}}
+  if(mainSeries){mainSeries.setData(candles);mainChart.timeScale().fitContent();}
   
   // Volume
-  if(!vc){const v=mkChart('volChart',false);if(v)vc=v.chart;}
-  if(vc){try{vc.removeSeries(vs);}catch(e){} vs=vc.addHistogramSeries({priceFormat:{type:'volume'}});
-    vs.setData(candles.map(c=>({time:c.time,value:c.volume,color:c.close>=c.open?'rgba(13,128,67,0.4)':'rgba(217,48,37,0.4)'})));vc.timeScale().fitContent();}
+  if(!volChart){const v=mkChart('volInner',false);if(v)volChart=v.chart;}
+  if(volChart){try{volChart.removeSeries(volSeries);}catch(e){} volSeries=volChart.addHistogramSeries({priceFormat:{type:'volume'}});
+    volSeries.setData(candles.map(c=>({time:c.time,value:c.volume,color:c.close>=c.open?'rgba(22,163,74,0.4)':'rgba(220,38,38,0.4)'})));volChart.timeScale().fitContent();}
   
-  const last=candles[candles.length-1];
+  // Update OHLC header
   document.getElementById('op').textContent='₹'+candles[0].open.toFixed(2);
   document.getElementById('hi').textContent='₹'+Math.max(...candles.map(x=>x.high)).toFixed(2);
   document.getElementById('lo').textContent='₹'+Math.min(...candles.map(x=>x.low)).toFixed(2);
-  document.getElementById('cl').textContent='₹'+last.close.toFixed(2);
+  document.getElementById('cl').textContent='₹'+candles[candles.length-1].close.toFixed(2);
   document.getElementById('dataRange').textContent=data.from+' → '+data.to;
   
+  // Indicators
   idata=await fetchInd(active,tf);
   if(!idata?.timestamps)return;
   const ts=idata.timestamps;
   
-  // MA & BB
-  if(mc){
-    try{if(mc._ma)mc.removeSeries(mc._ma);if(mc._bbu)mc.removeSeries(mc._bbu);if(mc._bbl)mc.removeSeries(mc._bbl);}catch(e){}
-    if(actInd.ma&&idata.ma){const d=ts.map((t,i)=>({time:t,value:idata.ma[i]})).filter(x=>x.value!=null);if(d.length){mc._ma=mc.addLineSeries({color:'#1a73e8',lineWidth:1.5,priceLineVisible:false});mc._ma.setData(d);}}
-    if(actInd.bb&&idata.bb_upper){mc._bbu=mc.addLineSeries({color:'#999',lineWidth:1,lineStyle:2,priceLineVisible:false});mc._bbu.setData(ts.map((t,i)=>({time:t,value:idata.bb_upper[i]})).filter(x=>x.value!=null));
-      mc._bbl=mc.addLineSeries({color:'#999',lineWidth:1,lineStyle:2,priceLineVisible:false});mc._bbl.setData(ts.map((t,i)=>({time:t,value:idata.bb_lower[i]})).filter(x=>x.value!=null));}
+  // MA & BB on main chart
+  if(mainChart){
+    try{if(mainChart._ma)mainChart.removeSeries(mainChart._ma);if(mainChart._bbu)mainChart.removeSeries(mainChart._bbu);if(mainChart._bbl)mainChart.removeSeries(mainChart._bbl);}catch(e){}
+    if(actInd.ma&&idata.ma){mainChart._ma=mainChart.addLineSeries({color:'#2563eb',lineWidth:1.5,priceLineVisible:false});mainChart._ma.setData(ts.map((t,i)=>({time:t,value:idata.ma[i]})).filter(x=>x.value!=null));}
+    if(actInd.bb&&idata.bb_upper){mainChart._bbu=mainChart.addLineSeries({color:'#9ca3af',lineWidth:1,lineStyle:2,priceLineVisible:false});mainChart._bbu.setData(ts.map((t,i)=>({time:t,value:idata.bb_upper[i]})).filter(x=>x.value!=null));mainChart._bbl=mainChart.addLineSeries({color:'#9ca3af',lineWidth:1,lineStyle:2,priceLineVisible:false});mainChart._bbl.setData(ts.map((t,i)=>({time:t,value:idata.bb_lower[i]})).filter(x=>x.value!=null));}
   }
   
   // RSI
-  if(actInd.rsi&&idata.rsi){document.getElementById('rsiPane').classList.remove('hidden');
-    if(!rc){const r=mkChart('rsiChart',false);if(r)rc=r.chart;}
-    if(rc){try{rc.removeSeries(rc._s);}catch(e){} rc._s=rc.addLineSeries({color:'#7b1fa2',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});
-      rc._s.setData(ts.map((t,i)=>({time:t,value:idata.rsi[i]})).filter(x=>x.value!=null));addRef(rc,70,'#d93025');addRef(rc,30,'#0d8043');rc.timeScale().fitContent();
-      const rv=idata.rsi.filter(x=>x!=null);document.getElementById('rsiVal').textContent=rv[rv.length-1]?.toFixed(2)||'—';}}
-  else{document.getElementById('rsiPane').classList.add('hidden');}
+  document.getElementById('rsiChart').classList.toggle('hidden',!actInd.rsi);
+  if(actInd.rsi&&idata.rsi){if(!rsiChart){const r=mkChart('rsiInner',false);if(r)rsiChart=r.chart;}if(rsiChart){try{rsiChart.removeSeries(rsiChart._s);}catch(e){} rsiChart._s=rsiChart.addLineSeries({color:'#7c3aed',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});rsiChart._s.setData(ts.map((t,i)=>({time:t,value:idata.rsi[i]})).filter(x=>x.value!=null));addRef(rsiChart,70,'#dc2626');addRef(rsiChart,30,'#16a34a');rsiChart.timeScale().fitContent();document.getElementById('rsiVal').textContent=idata.rsi.filter(x=>x!=null).pop()?.toFixed(2)||'—';}}
   
   // MACD
-  if(actInd.macd&&idata.macd_line){document.getElementById('macdPane').classList.remove('hidden');
-    if(!macdc){const m=mkChart('macdChart',false);if(m)macdc=m.chart;}
-    if(macdc){try{macdc.removeSeries(macdc._h);macdc.removeSeries(macdc._sig);}catch(e){}
-      macdc._h=macdc.addHistogramSeries({priceFormat:{type:'price'}});
-      macdc._h.setData(ts.map((t,i)=>({time:t,value:idata.macd_histogram?.[i],color:(idata.macd_histogram?.[i]||0)>=0?'rgba(13,128,67,0.5)':'rgba(217,48,37,0.5)'})).filter(x=>x.value!=null));
-      macdc._sig=macdc.addLineSeries({color:'#d93025',lineWidth:1,priceLineVisible:false});
-      macdc._sig.setData(ts.map((t,i)=>({time:t,value:idata.signal_line?.[i]})).filter(x=>x.value!=null));
-      addRef(macdc,0,'#999');macdc.timeScale().fitContent();
-      const mv=idata.macd_line.filter(x=>x!=null);document.getElementById('macdVal').textContent=mv[mv.length-1]?.toFixed(2)||'—';}}
-  else{document.getElementById('macdPane').classList.add('hidden');}
+  document.getElementById('macdChart').classList.toggle('hidden',!actInd.macd);
+  if(actInd.macd&&idata.macd_line){if(!macdChart){const m=mkChart('macdInner',false);if(m)macdChart=m.chart;}if(macdChart){try{macdChart.removeSeries(macdChart._h);macdChart.removeSeries(macdChart._s);}catch(e){} macdChart._h=macdChart.addHistogramSeries({priceFormat:{type:'price'}});macdChart._h.setData(ts.map((t,i)=>({time:t,value:idata.macd_histogram?.[i],color:(idata.macd_histogram?.[i]||0)>=0?'rgba(22,163,74,0.5)':'rgba(220,38,38,0.5)'})).filter(x=>x.value!=null));macdChart._s=macdChart.addLineSeries({color:'#dc2626',lineWidth:1,priceLineVisible:false});macdChart._s.setData(ts.map((t,i)=>({time:t,value:idata.signal_line?.[i]})).filter(x=>x.value!=null));addRef(macdChart,0,'#9ca3af');macdChart.timeScale().fitContent();document.getElementById('macdVal').textContent=idata.macd_line.filter(x=>x!=null).pop()?.toFixed(2)||'—';}}
   
   // ADX
-  if(actInd.adx&&idata.adx){document.getElementById('adxPane').classList.remove('hidden');
-    if(!adxc){const a=mkChart('adxChart',false);if(a)adxc=a.chart;}
-    if(adxc){try{adxc.removeSeries(adxc._s);}catch(e){} adxc._s=adxc.addLineSeries({color:'#00695c',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});
-      adxc._s.setData(ts.map((t,i)=>({time:t,value:idata.adx[i]})).filter(x=>x.value!=null));addRef(adxc,25,'#999');adxc.timeScale().fitContent();
-      const av=idata.adx.filter(x=>x!=null);document.getElementById('adxVal').textContent=av[av.length-1]?.toFixed(2)||'—';}}
-  else{document.getElementById('adxPane').classList.add('hidden');}
+  document.getElementById('adxChart').classList.toggle('hidden',!actInd.adx);
+  if(actInd.adx&&idata.adx){if(!adxChart){const a=mkChart('adxInner',false);if(a)adxChart=a.chart;}if(adxChart){try{adxChart.removeSeries(adxChart._s);}catch(e){} adxChart._s=adxChart.addLineSeries({color:'#0891b2',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});adxChart._s.setData(ts.map((t,i)=>({time:t,value:idata.adx[i]})).filter(x=>x.value!=null));addRef(adxChart,25,'#9ca3af');adxChart.timeScale().fitContent();document.getElementById('adxVal').textContent=idata.adx.filter(x=>x!=null).pop()?.toFixed(2)||'—';}}
   
   // ATR
-  if(actInd.atr&&idata.atr){document.getElementById('atrPane').classList.remove('hidden');
-    if(!atrc){const a=mkChart('atrChart',false);if(a)atrc=a.chart;}
-    if(atrc){try{atrc.removeSeries(atrc._s);}catch(e){} atrc._s=atrc.addLineSeries({color:'#bf360c',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});
-      atrc._s.setData(ts.map((t,i)=>({time:t,value:idata.atr[i]})).filter(x=>x.value!=null));atrc.timeScale().fitContent();
-      const av=idata.atr.filter(x=>x!=null);document.getElementById('atrVal').textContent=av[av.length-1]?.toFixed(2)||'—';}}
-  else{document.getElementById('atrPane').classList.add('hidden');}
+  document.getElementById('atrChart').classList.toggle('hidden',!actInd.atr);
+  if(actInd.atr&&idata.atr){if(!atrChart){const a=mkChart('atrInner',false);if(a)atrChart=a.chart;}if(atrChart){try{atrChart.removeSeries(atrChart._s);}catch(e){} atrChart._s=atrChart.addLineSeries({color:'#d97706',lineWidth:1.5,priceLineVisible:false,lastValueVisible:true});atrChart._s.setData(ts.map((t,i)=>({time:t,value:idata.atr[i]})).filter(x=>x.value!=null));atrChart.timeScale().fitContent();document.getElementById('atrVal').textContent=idata.atr.filter(x=>x!=null).pop()?.toFixed(2)||'—';}}
   
   resizeAll();
 }
 
+function addRef(c,v,color){
+  try{if(!c._refs)c._refs={};if(c._refs[v])c.removeSeries(c._refs[v]);
+    c._refs[v]=c.addLineSeries({color,lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});
+    if(candles.length>1)c._refs[v].setData([{time:candles[0].time,value:v},{time:candles[candles.length-1].time,value:v}]);}catch(e){}
+}
+
 async function updateMV(){
-  if(!mvd){const d=mkChart('mvD',true);if(d){mvd=d.chart;sd=d.series;}
-    const w=mkChart('mvW',true);if(w){mvw=w.chart;sw=w.series;}
-    const m=mkChart('mvM',true);if(m){mvm=m.chart;sm=m.series;}}
+  if(!mvD){const d=mkChart('mvDaily',true);if(d){mvD=d.chart;sD=d.series;}const w=mkChart('mvWeekly',true);if(w){mvW=w.chart;sW=w.series;}const m=mkChart('mvMonthly',true);if(m){mvM=m.chart;sM=m.series;}}
   const[d,w,m]=await Promise.all([fetchHistory(active,'daily'),fetchHistory(active,'weekly'),fetchHistory(active,'monthly')]);
-  if(d?.candles&&sd){sd.setData(d.candles);mvd.timeScale().fitContent();}
-  if(w?.candles&&sw){sw.setData(w.candles);mvw.timeScale().fitContent();}
-  if(m?.candles&&sm){sm.setData(m.candles);mvm.timeScale().fitContent();}
+  if(d?.candles&&sD){sD.setData(d.candles);mvD.timeScale().fitContent();}
+  if(w?.candles&&sW){sW.setData(w.candles);mvW.timeScale().fitContent();}
+  if(m?.candles&&sM){sM.setData(m.candles);mvM.timeScale().fitContent();}
   resizeAll();
 }
 
@@ -250,45 +232,24 @@ async function updateQuote(){
 }
 
 function renderList(f=''){
-  const q=f.toLowerCase();
-  const fl=stocks.filter(s=>s.symbol.toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q)).slice(0,50);
+  const q=f.toLowerCase(),fl=stocks.filter(s=>s.symbol.toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q)).slice(0,50);
   document.getElementById('stockList').innerHTML=fl.map(s=>{
     const a=s.symbol===active,up=(s.cp||0)>=0;
     return`<div class="stock-row grid grid-cols-12 gap-1 px-2 py-1.5 text-[10px] ${a?'active':''}" onclick="select('${s.symbol}')">
-      <span class="col-span-3 font-semibold text-gray-900 truncate">${s.symbol}</span>
-      <span class="col-span-3 text-right font-mono text-gray-700">${s.price?'₹'+s.price.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</span>
+      <span class="col-span-3 font-semibold text-gray-900 truncate">${s.symbol}</span><span class="col-span-3 text-right font-mono text-gray-700">${s.price?'₹'+s.price.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</span>
       <span class="col-span-3 text-right font-mono ${up?'green':'red'}">${s.change?(s.change>=0?'+':'')+s.change.toFixed(2):'—'}</span>
-      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[9px] ${up?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span>
-    </div>`;
+      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[9px] ${up?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span></div>`;
   }).join('');
   document.getElementById('stockCount').textContent=fl.length+' stocks';
 }
 
 async function select(sym){active=sym;renderList(document.getElementById('search').value);await updateQuote();if(multi)await updateMV();else await updateAll();}
-async function setTF(t){tf=t;document.querySelectorAll('#tfdaily,#tfweekly,#tfmonthly').forEach(b=>b.classList.remove('active'));document.getElementById('tf'+t)?.classList.add('active');if(!multi)await updateAll();}
+async function setTF(t){tf=t;['daily','weekly','monthly'].forEach(x=>document.getElementById('tf'+x)?.classList.remove('active'));document.getElementById('tf'+t)?.classList.add('active');if(!multi)await updateAll();}
 function toggleWL(){wlOpen=!wlOpen;document.getElementById('wlPanel').style.width=wlOpen?'240px':'0px';document.getElementById('wlPanel').style.border=wlOpen?'':'none';setTimeout(resizeAll,350);}
-function toggleMV(){multi=!multi;document.getElementById('singleView').style.display=multi?'none':'flex';document.getElementById('multiView').style.display=multi?'flex':'none';document.getElementById('mvBtn').classList.toggle('toggle',multi);document.getElementById('indPanel').classList.toggle('hidden',multi);if(multi)updateMV();else updateAll();setTimeout(resizeAll,100);}
-function toggleIndPanel(){document.getElementById('indPanel').classList.toggle('hidden');document.getElementById('indBtn').classList.toggle('toggle',!document.getElementById('indPanel').classList.contains('hidden'));}
-function toggleInd(n){actInd[n]=document.getElementById('chk'+n.charAt(0).toUpperCase()+n.slice(1))?.checked||false;document.getElementById('volPane').style.display=actInd.volume?'block':'none';if(!multi)updateAll();}
-function reloadInd(){if(!multi)updateAll();}
-function resizeAll(){
-  ['mainPane','volChart','rsiChart','macdChart','adxChart','atrChart','mvD','mvW','mvM'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){
-      const chartEl=el.querySelector('canvas')||el;
-      const parent=el.parentElement||el;
-      if(parent&&parent.clientWidth>0){
-        // Charts auto-handle resize via the container
-      }
-    }
-  });
-  [mc,vc,rc,macdc,adxc,atrc,mvd,mvw,mvm].forEach(c=>{
-    if(c&&c._container){
-      const p=c._container.parentElement;
-      if(p&&p.clientWidth>0&&p.clientHeight>0) c.applyOptions({width:p.clientWidth,height:p.clientHeight});
-    }
-  });
-}
+function toggleMV(){multi=!multi;document.getElementById('singleView').style.display=multi?'none':'flex';document.getElementById('multiView').style.display=multi?'flex':'none';document.getElementById('mvBtn').classList.toggle('active',multi);if(multi)updateMV();else updateAll();setTimeout(resizeAll,100);}
+function toggleIndPanel(){document.getElementById('indPanel').classList.toggle('hidden');document.getElementById('indBtn').classList.toggle('active',!document.getElementById('indPanel').classList.contains('hidden'));}
+function toggleInd(n){actInd[n]=!actInd[n];if(n==='vol')document.getElementById('volChart').classList.toggle('hidden',!actInd.vol);if(!multi)updateAll();}
+function resizeAll(){setTimeout(()=>{[mainChart,volChart,rsiChart,macdChart,adxChart,atrChart,mvD,mvW,mvM].forEach(c=>{if(c){const el=c._container;if(el&&el.clientWidth>0)c.applyOptions({width:el.clientWidth,height:el.clientHeight});}});},100);}
 
 document.getElementById('search').addEventListener('input',function(){renderList(this.value);});
 window.addEventListener('resize',resizeAll);
@@ -297,13 +258,11 @@ async function boot(){
   await loadStocks();
   renderList();
   await updateQuote();
-  // Init charts after DOM is ready
   setTimeout(async()=>{
-    const m=mkChart('mainPane',true);if(m){mc=m.chart;ms=m.series;}
-    const v=mkChart('volChart',false);if(v)vc=v.chart;
+    const m=mkChart('mainChart',true);if(m){mainChart=m.chart;mainSeries=m.series;}
+    const v=mkChart('volInner',false);if(v)volChart=v.chart;
     await updateAll();
-    resizeAll();
-  },300);
+  },400);
 }
 boot();
 </script>
