@@ -90,9 +90,10 @@ def get_history(symbol, period):
     symbol = symbol.upper()
     
     period_map = {
-        '1d':('1d','5m'), '1w':('5d','30m'), '1mo':('1mo','1h'),
-        '3mo':('3mo','1d'), '6mo':('6mo','1d'), '1y':('1y','1d'),
-        '2y':('2y','1wk'), '5y':('5y','1wk'), 'max':('max','1mo')
+        '1d':('1d','1d'),
+        'daily':('max','1d'),
+        'monthly':('max','1mo'),
+        'weekly':('max','1wk')
     }
     
     if period not in period_map:
