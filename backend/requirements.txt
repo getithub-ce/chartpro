@@ -2,4 +2,5 @@ flask
 flask-cors
 yfinance
 pandas
+numpy
 gunicorn
