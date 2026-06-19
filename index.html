@@ -3,106 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>ChartPro • NSE Charts</title>
+  <title>ChartPro • NSE Trading</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: #131722; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #d1d4dc; height: 100vh; width: 100vw; overflow: hidden; position: fixed; }
-    .stock-row { transition: background 0.15s; border-bottom: 1px solid #1e222d; cursor: pointer; }
-    .stock-row.active { background: #1a2030; border-left: 3px solid #2962ff; }
-    .tv-btn { background: #2a2e39; color: #787b86; border: 1px solid #2a2e39; transition: all 0.2s; }
-    .tv-btn.active { background: #2962ff; color: #fff; border-color: #2962ff; }
-    .green { color: #22c55e; }
-    .red { color: #ef4444; }
-    button { min-height: 40px; }
+    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; height: 100vh; width: 100vw; overflow: hidden; position: fixed; }
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .stock-row { transition: background 0.15s; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .stock-row:hover { background: #f5f7fa; }
+    .stock-row.active { background: #e8f0fe; border-left: 3px solid #1a73e8; }
+    .btn { transition: all 0.2s; border-radius: 6px; font-weight: 500; cursor: pointer; }
+    .btn-active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .btn-default { background: #f5f5f5; color: #555; border: 1px solid #ddd; }
+    .btn-toggle { background: #e8f0fe; color: #1a73e8; border: 1px solid #1a73e8; }
+    .green { color: #0d8043; }
+    .red { color: #d93025; }
     ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #131722; }
-    ::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 2px; }
+    ::-webkit-scrollbar-track { background: #f0f0f0; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
     #tooltip {
       position: absolute; z-index: 1000; pointer-events: none; display: none;
-      background: #1e222d; border: 1px solid #2a2e39; border-radius: 4px;
-      padding: 8px 12px; font-size: 11px; font-family: monospace; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background: #fff; border: 1px solid #ddd; border-radius: 6px;
+      padding: 8px 12px; font-size: 11px; font-family: monospace; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
   </style>
 </head>
 <body class="flex flex-col h-screen">
 
-  <!-- HEADER -->
-  <div class="bg-[#1e222d] px-3 py-2 flex items-center justify-between border-b border-[#2a2e39]">
-    <div class="flex items-center gap-3">
-      <span class="text-blue-500 font-bold text-sm">CHART<span class="text-white">PRO</span></span>
-      <span id="sourceLabel" class="text-[10px] text-green-400">● NSE Live</span>
+  <!-- TOP BAR -->
+  <div class="bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <span class="text-blue-600 font-bold text-sm">CHART<span class="text-gray-800">PRO</span></span>
+      <span id="sourceLabel" class="text-[10px] text-green-600 font-medium">● NSE Live</span>
     </div>
-    <span id="dataRange" class="text-[9px] text-gray-600 hidden sm:inline">—</span>
+    <div class="flex gap-1.5">
+      <button onclick="toggleMultiview()" id="mvBtn" class="btn btn-default text-[10px] px-3 py-1.5">📊 Multiview</button>
+      <button onclick="toggleIndicators()" id="indBtn" class="btn btn-default text-[10px] px-3 py-1.5">📈 Indicators</button>
+    </div>
   </div>
 
   <!-- MAIN -->
   <div class="flex flex-1 overflow-hidden flex-col lg:flex-row">
     
     <!-- WATCHLIST -->
-    <div class="lg:w-[300px] w-full lg:h-full h-[38%] bg-[#131722] border-r border-[#2a2e39] flex flex-col">
-      <div class="p-2 border-b border-[#2a2e39]">
-        <input type="text" id="search" placeholder="Search symbol..." class="w-full bg-[#1e222d] border border-[#2a2e39] rounded px-3 py-2 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500">
+    <div class="lg:w-[280px] w-full lg:h-full h-[35%] bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+      <div class="p-2 border-b border-gray-200">
+        <input type="text" id="search" placeholder="Search symbol..." class="w-full bg-gray-100 border border-gray-300 rounded px-3 py-2 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500">
       </div>
-      <div class="px-3 py-1.5 text-[10px] text-gray-600 grid grid-cols-12 border-b border-[#1e222d]">
+      <div class="px-3 py-1.5 text-[10px] text-gray-500 grid grid-cols-12 border-b border-gray-100 font-medium">
         <span class="col-span-3">SYMBOL</span>
         <span class="col-span-3 text-right">PRICE</span>
         <span class="col-span-3 text-right">CHG</span>
         <span class="col-span-3 text-right">CHG%</span>
       </div>
       <div id="stockList" class="flex-1 overflow-y-auto"></div>
-      <div class="px-3 py-1.5 border-t border-[#1e222d] text-[10px] text-gray-600">
+      <div class="px-3 py-1.5 border-t border-gray-100 text-[10px] text-gray-400">
         <span id="stockCount">—</span>
       </div>
     </div>
 
-    <!-- CHART -->
-    <div class="flex-1 flex flex-col bg-[#131722] min-h-0">
+    <!-- CHART AREA -->
+    <div class="flex-1 flex flex-col min-h-0 bg-[#f8f9fa]">
       
-      <!-- STOCK INFO -->
-      <div class="px-4 py-2 border-b border-[#2a2e39]">
+      <!-- STOCK HEADER -->
+      <div class="px-4 py-2 bg-white border-b border-gray-200">
         <div class="flex justify-between items-start flex-wrap gap-2">
           <div>
             <div class="flex items-center gap-2">
-              <h2 id="sym" class="text-lg font-bold text-white">—</h2>
-              <span id="sector" class="text-[10px] bg-[#1e222d] px-2 py-0.5 rounded text-gray-500">—</span>
+              <h2 id="sym" class="text-base font-bold text-gray-900">—</h2>
+              <span id="sector" class="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500">—</span>
             </div>
             <p id="name" class="text-[10px] text-gray-500">—</p>
           </div>
           <div class="text-right">
-            <div id="price" class="text-xl font-mono font-bold text-white">₹—</div>
+            <div id="price" class="text-xl font-mono font-bold text-gray-900">₹—</div>
             <div id="change" class="text-xs font-semibold px-2 py-0.5 rounded">—</div>
           </div>
         </div>
-        <div class="flex gap-4 text-[10px] text-gray-500 mt-1">
-          <span>O <span id="op" class="text-gray-300">—</span></span>
-          <span>H <span id="hi" class="text-gray-300">—</span></span>
-          <span>L <span id="lo" class="text-gray-300">—</span></span>
-          <span>C <span id="cl" class="text-gray-300">—</span></span>
+        <div class="flex gap-4 text-[10px] text-gray-500 mt-1" id="ohlcRow">
+          <span>O <span id="op" class="text-gray-800 font-medium">—</span></span>
+          <span>H <span id="hi" class="text-gray-800 font-medium">—</span></span>
+          <span>L <span id="lo" class="text-gray-800 font-medium">—</span></span>
+          <span>C <span id="cl" class="text-gray-800 font-medium">—</span></span>
         </div>
       </div>
 
-      <!-- TIMEFRAME BUTTONS -->
-      <div class="flex gap-1 px-4 py-2 border-b border-[#1e222d]">
-        <button onclick="setTF('1d')" id="tf1d" class="tv-btn px-4 py-1.5 rounded text-[10px] font-medium active">1D</button>
-        <button onclick="setTF('daily')" id="tfdaily" class="tv-btn px-4 py-1.5 rounded text-[10px] font-medium">Daily</button>
-        <button onclick="setTF('monthly')" id="tfmonthly" class="tv-btn px-4 py-1.5 rounded text-[10px] font-medium">Monthly</button>
+      <!-- TIMEFRAME + DATA RANGE -->
+      <div class="flex gap-1.5 px-4 py-2 bg-white border-b border-gray-100 items-center flex-wrap">
+        <button onclick="setTF('daily')" id="tfdaily" class="btn btn-active text-[10px] px-3 py-1.5">Daily</button>
+        <button onclick="setTF('weekly')" id="tfweekly" class="btn btn-default text-[10px] px-3 py-1.5">Weekly</button>
+        <button onclick="setTF('monthly')" id="tfmonthly" class="btn btn-default text-[10px] px-3 py-1.5">Monthly</button>
+        <span id="dataRange" class="text-[9px] text-gray-400 ml-auto hidden sm:inline">—</span>
       </div>
 
-      <!-- CHART -->
-      <div id="chartContainer" class="flex-1 relative" style="min-height:200px;">
+      <!-- INDICATOR PANEL -->
+      <div id="indicatorPanel" class="hidden px-4 py-2 bg-white border-b border-gray-100 flex gap-2 flex-wrap">
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma20')" id="chkMA20"> MA 20</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma50')" id="chkMA50"> MA 50</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('ma200')" id="chkMA200"> MA 200</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('bb')" id="chkBB"> Bollinger</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('rsi')" id="chkRSI"> RSI</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('adx')" id="chkADX"> ADX</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('atr')" id="chkATR"> ATR</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('macd')" id="chkMACD"> MACD</label>
+        <label class="text-[10px] flex items-center gap-1"><input type="checkbox" onchange="toggleIndicator('volume')" id="chkVol"> Volume</label>
+      </div>
+
+      <!-- CHART CONTAINER(S) -->
+      <div id="singleChart" class="flex-1 relative" style="min-height:200px;">
         <div id="tooltip"></div>
+      </div>
+      <div id="multiCharts" class="hidden flex-1 flex flex-col" style="min-height:200px;">
+        <div id="chartDaily" class="flex-1 relative border-b border-gray-200" style="min-height:150px;"></div>
+        <div id="chartWeekly" class="flex-1 relative border-b border-gray-200" style="min-height:150px;"></div>
+        <div id="chartMonthly" class="flex-1 relative" style="min-height:150px;"></div>
       </div>
     </div>
   </div>
 
 <script>
 const API = 'https://chartpro.onrender.com';
-let stocks = [];
-let activeSymbol = 'RELIANCE';
-let timeframe = '1d';
-let chart = null, series = null;
+let stocks = [], activeSymbol = 'RELIANCE', timeframe = 'daily', multiview = false;
+let chart = null, series = {}, indicators = {};
+let chartD = null, chartW = null, chartM = null;
+let seriesD = null, seriesW = null, seriesM = null;
+let indicatorData = null;
+let activeIndicators = {};
 
 async function loadStocks() {
   try {
@@ -121,52 +148,89 @@ async function fetchHistory(sym, tf) {
   return r.ok ? await r.json() : null;
 }
 
-function initChart() {
-  if (chart) chart.remove();
-  const el = document.getElementById('chartContainer');
-  chart = LightweightCharts.createChart(el, {
-    layout: { background: { type:'solid', color:'#131722' }, textColor:'#787b86' },
-    grid: { vertLines: { color:'#1e222d' }, horzLines: { color:'#1e222d' } },
+async function fetchIndicators(sym, tf) {
+  const r = await fetch(API+'/indicators/'+sym+'/'+tf);
+  return r.ok ? await r.json() : null;
+}
+
+function createChart(containerId) {
+  const el = document.getElementById(containerId);
+  const c = LightweightCharts.createChart(el, {
+    layout: { background: { type:'solid', color:'#fff' }, textColor:'#333' },
+    grid: { vertLines: { color:'#eee' }, horzLines: { color:'#eee' } },
     crosshair: { mode: 1 },
-    rightPriceScale: { borderColor:'#2a2e39', autoScale: true },
-    timeScale: { borderColor:'#2a2e39', timeVisible: true },
+    rightPriceScale: { borderColor:'#ddd', autoScale: true, scaleMargins:{top:0.05,bottom:0.2} },
+    timeScale: { borderColor:'#ddd', timeVisible: true },
     localization: { priceFormatter: p => '₹'+p.toFixed(2) },
     width: el.clientWidth, height: el.clientHeight,
   });
-  series = chart.addCandlestickSeries({
-    upColor:'#22c55e', downColor:'#ef4444',
-    borderUpColor:'#22c55e', borderDownColor:'#ef4444',
-    wickUpColor:'#22c55e', wickDownColor:'#ef4444',
+  
+  const mainSeries = c.addCandlestickSeries({
+    upColor:'#0d8043', downColor:'#d93025',
+    borderUpColor:'#0d8043', borderDownColor:'#d93025',
+    wickUpColor:'#0d8043', wickDownColor:'#d93025',
   });
-
-  chart.subscribeCrosshairMove(param => {
+  
+  c.subscribeCrosshairMove(param => {
+    if (containerId !== 'singleChart') return;
     const t = document.getElementById('tooltip');
     if (!param.time || !param.point) { t.style.display='none'; return; }
-    const d = param.seriesData.get(series);
+    const d = param.seriesData.get(mainSeries);
     if (d) {
-      const dt = new Date(param.time*1000);
-      const ts = timeframe==='1d' ? dt.toLocaleDateString() : dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
-      t.innerHTML = `<div style="color:#787b86">${ts}</div><div style="color:#fff;font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div><div style="color:#787b86;margin-top:4px">O ₹${d.open.toFixed(2)} H ₹${d.high.toFixed(2)} L ₹${d.low.toFixed(2)} C ₹${d.close.toFixed(2)}</div>`;
+      document.getElementById('op').textContent = '₹'+d.open.toFixed(2);
+      document.getElementById('hi').textContent = '₹'+d.high.toFixed(2);
+      document.getElementById('lo').textContent = '₹'+d.low.toFixed(2);
+      document.getElementById('cl').textContent = '₹'+d.close.toFixed(2);
       t.style.display='block';
+      t.innerHTML = `<div style="color:#666">${new Date(param.time*1000).toLocaleDateString()}</div><div style="font-size:13px;font-weight:bold">₹${d.close.toFixed(2)}</div>`;
       const r = el.getBoundingClientRect();
-      t.style.left = Math.min(param.point.x+20, r.width-160)+'px';
-      t.style.top = Math.max(param.point.y-70, 10)+'px';
+      t.style.left = Math.min(param.point.x+15, r.width-150)+'px';
+      t.style.top = Math.max(param.point.y-60, 5)+'px';
     }
   });
+  
+  return { chart:c, mainSeries };
 }
 
-async function updateChart() {
-  if (!chart) initChart();
+async function updateSingleChart() {
+  if (!chart) {
+    const c = createChart('singleChart');
+    chart = c.chart;
+    series.main = c.mainSeries;
+  }
   const data = await fetchHistory(activeSymbol, timeframe);
   if (!data?.candles?.length) return;
-  series.setData(data.candles);
+  series.main.setData(data.candles);
   chart.timeScale().fitContent();
-  const c = data.candles;
-  document.getElementById('op').textContent = '₹'+c[0].open.toFixed(2);
-  document.getElementById('hi').textContent = '₹'+Math.max(...c.map(x=>x.high)).toFixed(2);
-  document.getElementById('lo').textContent = '₹'+Math.min(...c.map(x=>x.low)).toFixed(2);
-  document.getElementById('cl').textContent = '₹'+c[c.length-1].close.toFixed(2);
-  document.getElementById('dataRange').textContent = data.from+' → '+data.to+' ('+data.count+' candles)';
+  
+  const last = data.candles[data.candles.length-1];
+  document.getElementById('op').textContent = '₹'+data.candles[0].open.toFixed(2);
+  document.getElementById('hi').textContent = '₹'+Math.max(...data.candles.map(x=>x.high)).toFixed(2);
+  document.getElementById('lo').textContent = '₹'+Math.min(...data.candles.map(x=>x.low)).toFixed(2);
+  document.getElementById('cl').textContent = '₹'+last.close.toFixed(2);
+  document.getElementById('dataRange').textContent = data.from+' → '+data.to;
+  
+  // Load indicators
+  indicatorData = await fetchIndicators(activeSymbol, timeframe);
+  applyIndicators();
+}
+
+async function updateMultiCharts() {
+  if (!chartD) {
+    const d = createChart('chartDaily'); chartD = d.chart; seriesD = d.mainSeries;
+    const w = createChart('chartWeekly'); chartW = w.chart; seriesW = w.mainSeries;
+    const m = createChart('chartMonthly'); chartM = m.chart; seriesM = m.mainSeries;
+  }
+  
+  const [dailyData, weeklyData, monthlyData] = await Promise.all([
+    fetchHistory(activeSymbol, 'daily'),
+    fetchHistory(activeSymbol, 'weekly'),
+    fetchHistory(activeSymbol, 'monthly')
+  ]);
+  
+  if (dailyData?.candles) { seriesD.setData(dailyData.candles); chartD.timeScale().fitContent(); }
+  if (weeklyData?.candles) { seriesW.setData(weeklyData.candles); chartW.timeScale().fitContent(); }
+  if (monthlyData?.candles) { seriesM.setData(monthlyData.candles); chartM.timeScale().fitContent(); }
 }
 
 async function updateQuote() {
@@ -178,7 +242,7 @@ async function updateQuote() {
   document.getElementById('price').textContent = '₹'+q.price.toLocaleString('en-IN',{minimumFractionDigits:2});
   const up = q.changePercent>=0;
   document.getElementById('change').textContent = (up?'+':'')+q.changePercent.toFixed(2)+'%';
-  document.getElementById('change').className = 'text-xs font-semibold px-2 py-0.5 rounded '+(up?'text-green-400 bg-green-400/10':'text-red-400 bg-red-400/10');
+  document.getElementById('change').className = 'text-xs font-semibold px-2 py-0.5 rounded '+(up?'bg-green-50 text-green-700':'bg-red-50 text-red-700');
 }
 
 function renderList(f='') {
@@ -188,10 +252,10 @@ function renderList(f='') {
     const a = s.symbol===activeSymbol;
     const up = (s.cp||0)>=0;
     return `<div class="stock-row grid grid-cols-12 gap-1 px-3 py-2 text-[11px] ${a?'active':''}" onclick="select('${s.symbol}')">
-      <span class="col-span-3 font-semibold text-white truncate">${s.symbol}</span>
-      <span class="col-span-3 text-right font-mono text-gray-300">${s.price?'₹'+s.price.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</span>
+      <span class="col-span-3 font-semibold text-gray-900 truncate">${s.symbol}</span>
+      <span class="col-span-3 text-right font-mono text-gray-700">${s.price?'₹'+s.price.toLocaleString('en-IN',{minimumFractionDigits:2}):'—'}</span>
       <span class="col-span-3 text-right font-mono ${up?'green':'red'}">${s.change?(s.change>=0?'+':'')+s.change.toFixed(2):'—'}</span>
-      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] ${up?'text-green-400 bg-green-400/10':'text-red-400 bg-red-400/10'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span>
+      <span class="col-span-3 text-right"><span class="px-1.5 py-0.5 rounded text-[10px] ${up?'bg-green-50 text-green-700':'bg-red-50 text-red-700'}">${s.cp?(up?'+':'')+s.cp.toFixed(2)+'%':'—'}</span></span>
     </div>`;
   }).join('');
   document.getElementById('stockCount').textContent = filtered.length+' stocks';
@@ -201,28 +265,106 @@ async function select(sym) {
   activeSymbol = sym;
   renderList(document.getElementById('search').value);
   await updateQuote();
-  await updateChart();
+  if (multiview) await updateMultiCharts();
+  else await updateSingleChart();
 }
 
 async function setTF(tf) {
   timeframe = tf;
-  ['1d','daily','monthly'].forEach(t => document.getElementById('tf'+t)?.classList.remove('active'));
-  document.getElementById('tf'+tf)?.classList.add('active');
-  await updateChart();
+  ['daily','weekly','monthly'].forEach(t => {
+    document.getElementById('tf'+t)?.classList.remove('btn-active');
+    document.getElementById('tf'+t)?.classList.add('btn-default');
+  });
+  document.getElementById('tf'+tf)?.classList.add('btn-active');
+  document.getElementById('tf'+tf)?.classList.remove('btn-default');
+  
+  if (!multiview) await updateSingleChart();
+}
+
+async function toggleMultiview() {
+  multiview = !multiview;
+  document.getElementById('singleChart').classList.toggle('hidden', multiview);
+  document.getElementById('multiCharts').classList.toggle('hidden', !multiview);
+  document.getElementById('mvBtn').classList.toggle('btn-toggle', multiview);
+  document.getElementById('mvBtn').classList.toggle('btn-default', !multiview);
+  
+  if (multiview) await updateMultiCharts();
+  else await updateSingleChart();
+}
+
+function toggleIndicators() {
+  const panel = document.getElementById('indicatorPanel');
+  panel.classList.toggle('hidden');
+  document.getElementById('indBtn').classList.toggle('btn-toggle', !panel.classList.contains('hidden'));
+}
+
+function toggleIndicator(name) {
+  activeIndicators[name] = !activeIndicators[name];
+  applyIndicators();
+}
+
+function applyIndicators() {
+  if (!indicatorData) return;
+  // Clear old indicator series
+  Object.keys(series).forEach(k => {
+    if (k !== 'main' && series[k]) {
+      try { chart.removeSeries(series[k]); } catch(e) {}
+      delete series[k];
+    }
+  });
+  
+  if (activeIndicators['ma20'] && indicatorData.ma20) addLineSeries('ma20', '#2962ff', indicatorData.ma20);
+  if (activeIndicators['ma50'] && indicatorData.ma50) addLineSeries('ma50', '#ff6d00', indicatorData.ma50);
+  if (activeIndicators['ma200'] && indicatorData.ma200) addLineSeries('ma200', '#d93025', indicatorData.ma200);
+  if (activeIndicators['bb'] && indicatorData.bb_upper) {
+    addLineSeries('bb_upper', '#999', indicatorData.bb_upper);
+    addLineSeries('bb_lower', '#999', indicatorData.bb_lower);
+  }
+  if (activeIndicators['volume']) {
+    series.volume = chart.addHistogramSeries({
+      color: '#e0e0e0',
+      priceFormat: { type:'volume' },
+      priceScaleId: 'volume',
+    });
+    chart.priceScale('volume').applyOptions({ scaleMargins:{top:0.85,bottom:0}, visible:false });
+  }
+}
+
+function addLineSeries(name, color, data) {
+  if (!chart || !indicatorData) return;
+  const lineData = indicatorData.timestamps.map((t, i) => ({
+    time: t,
+    value: data[i]
+  })).filter(d => d.value !== null && d.value !== undefined);
+  
+  if (lineData.length > 0) {
+    series[name] = chart.addLineSeries({
+      color, lineWidth: 1.5,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+    series[name].setData(lineData);
+  }
 }
 
 document.getElementById('search').addEventListener('input', function(){renderList(this.value);});
-window.addEventListener('resize',()=>{
-  const el = document.getElementById('chartContainer');
-  if(chart&&el) chart.applyOptions({width:el.clientWidth,height:el.clientHeight});
+window.addEventListener('resize', () => {
+  [chart, chartD, chartW, chartM].forEach(c => {
+    if (c) {
+      const parent = c._container || document.getElementById('singleChart');
+      if (parent) c.applyOptions({width:parent.clientWidth, height:parent.clientHeight});
+    }
+  });
 });
 
 async function boot() {
   await loadStocks();
-  initChart();
   renderList();
   await updateQuote();
-  await updateChart();
+  const c = createChart('singleChart');
+  chart = c.chart;
+  series.main = c.mainSeries;
+  await updateSingleChart();
 }
 boot();
 </script>
